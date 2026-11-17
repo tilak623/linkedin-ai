@@ -1,6 +1,8 @@
 # Database Schema Specification
 
-This document defines the relational database schema implemented in **Supabase PostgreSQL** (Cloud) and replicated in **SQLite** (Local Offline).
+> **Status:** This document includes the planned cloud schema. The current application uses local SQLite; Supabase, authentication, and Row Level Security policies are not implemented.
+
+This document defines the proposed relational schema for **Supabase PostgreSQL** (Cloud) and **SQLite** (Local Offline).
 
 ---
 
@@ -40,6 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
+    onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

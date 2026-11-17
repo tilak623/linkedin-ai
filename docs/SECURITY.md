@@ -1,5 +1,7 @@
 # Security Policy & Architecture
 
+> **Status:** This document states security requirements for the product. They are not all implemented yet; in particular, the current local app does not have user authentication, cloud RLS, or an Electron/local-folder scanner.
+
 ## 1. Security Architecture Principles
 
 The **Personal Branding AI Agent** enforces defense-in-depth principles across client, API, AI, and storage tiers.

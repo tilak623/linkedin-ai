@@ -8,6 +8,8 @@ from backend.app.core.errors import AppError, app_error_handler, global_exceptio
 from backend.app.api.v1.health import router as health_router
 from backend.app.api.v1.settings import router as settings_router
 from backend.app.api.v1.auth import router as auth_router
+from backend.app.api.v1.memory import router as memory_router
+from backend.app.api.v1.profile import router as profile_router
 
 setup_logging()
 
@@ -43,6 +45,8 @@ app.add_middleware(
 app.include_router(health_router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
+app.include_router(memory_router, prefix=settings.API_V1_PREFIX)
+app.include_router(profile_router, prefix=settings.API_V1_PREFIX)
 
 @app.get("/")
 def root_info():

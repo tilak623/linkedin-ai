@@ -38,6 +38,9 @@ export const App: React.FC = () => {
       }
       if (authRes.success && authRes.data) {
         setAuthStatus(authRes.data);
+        if (!authRes.data.onboarding_completed) {
+          setCurrentView('profile');
+        }
       }
       if (settingsRes.success && settingsRes.data) {
         setSettings(settingsRes.data);
@@ -99,7 +102,13 @@ export const App: React.FC = () => {
           {currentView === 'portfolio' && <Portfolio />}
           {currentView === 'networking' && <Networking />}
           {currentView === 'analytics' && <Analytics />}
-          {currentView === 'profile' && <Profile />}
+          {currentView === 'profile' && (
+            <Profile
+              onOnboardingComplete={(fullName) => setAuthStatus((current) => current
+                ? { ...current, full_name: fullName, onboarding_completed: true }
+                : current)}
+            />
+          )}
           {currentView === 'settings' && (
             <Settings
               settings={settings}

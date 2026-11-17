@@ -2,39 +2,33 @@
 
 ## Current development status
 
-- **Current phase**: Phase 1 (Functional Application Foundation) — COMPLETED
+- **Current phase**: Phase 2 (Professional Memory and Onboarding) — completed
 - **Completed modules**:
-  - **Phase 0**: Technical discovery, environment inspection, hardware profiling, database design, API specification, 14-document architecture suite.
-  - **Phase 1 Backend**:
-    - Python 3.13 + FastAPI REST Gateway with CORS middleware.
-    - Centralized structured logging and typed exception handling.
-    - Embedded SQLite database engine with zero-lock connection manager (`brand_agent.db`).
-    - Seeded default engineering user and professional profile.
-    - Endpoints implemented: `GET /`, `GET /api/v1/health`, `GET/PATCH /api/v1/settings`, `GET /api/v1/auth/me`.
-    - Automated unit test suite (`backend/tests/test_api.py`) passing 100% (6/6 tests in 0.065s).
-  - **Phase 1 Frontend**:
-    - React 18 + TypeScript + Vite project initialized and verified.
-    - Tailwind CSS design system with custom Obsidian Dark & Clean Light palettes.
-    - Full 12-section workspace navigation shell (Command Center, AI Interview, Content Studio, Media Studio, Calendar, Research, Memory, Portfolio, Networking, Analytics, Profile, Settings & Privacy).
-    - Web Speech API integration framework for free in-browser voice capture.
-    - Reusable components: Header with live health badge, Sidebar with active indicators, StatusBadge with RAM/CPU telemetry.
-    - Production build verified: `dist/index.html` (built in 8.15s, 0 errors).
-- **In-progress modules**:
-  - Preparing for Phase 2: Professional Memory & Onboarding Wizard.
+  - **Phase 0**: Initial technical discovery and product/architecture documentation.
+  - **Phase 1**: Local FastAPI + SQLite backend, React + TypeScript frontend shell, health/settings endpoints, and local API connectivity.
+  - **Phase 2**:
+    - Profile onboarding saves the user's name, professional background, goals, audience, and writing preferences.
+    - Skills support create, read, update, and delete with `implemented`, `studied`, `explored`, and `discovered` levels.
+    - Projects and learning milestones support create, read, update, and delete.
+    - SQLite FTS5 search covers profiles, skills, projects, and milestones; exact duplicate names/titles are rejected.
+    - Professional profile, skills, projects, and milestones can be exported as JSON.
+- **In-progress modules**: None.
 - **Pending modules**:
-  - Phase 2: Professional Memory and Onboarding Wizard
-  - Phase 3: AI Interviewer (Voice & Text)
-  - Phase 4: AI Technology Research Engine
-  - Phase 5: Content Creation Studio
-  - Phase 6: Media Generation Studio
-  - Phase 7: GitHub and Portfolio Intelligence
-  - Phase 8: LinkedIn Integration & Publishing
-  - Phase 9: Smart Calendar and Analytics
-  - Phase 10: Networking and Profile Optimization
-  - Phase 11: Windows Desktop Companion (Electron)
-  - Phase 12: Cloud Deployment and Synchronization
-  - Phase 13: Final Reliability, Testing & Windows Installer
-- **Known bugs**: None
-- **Tests passed**: 6/6 backend tests passed, frontend TypeScript compilation & Vite build passed
-- **Tests failing**: None
-- **Next immediate task**: Implement Phase 2: Professional Memory & Onboarding Wizard (onboarding flow, 4-tier skill management endpoints, searchable knowledge library, project/milestone ingestion).
+  - Phase 3: AI interviewer with adaptive text/voice conversations and persistence.
+  - Phase 4: Technology research and source verification.
+  - Phase 5: Content generation, fact checking, editing, and approval workflow.
+  - Phase 6: Media generation.
+  - Phase 7: GitHub and portfolio integrations.
+  - Phase 8: Authorized LinkedIn integration and manual publishing workflow.
+  - Phase 9: Calendar and real analytics.
+  - Phase 10: Networking and profile recommendations.
+  - Phase 11: Windows Electron companion.
+  - Phase 12: Cloud deployment, synchronization, and multi-user authentication.
+  - Phase 13: Reliability, full end-to-end testing, and Windows installer.
+- **Known limitations**:
+  - The app currently uses a single local default user; authentication and multi-user isolation are not implemented.
+  - AI, LinkedIn, GitHub, cloud sync, and desktop capabilities remain planned. Existing screens for these areas may still contain static examples.
+  - JSON export includes profile, skills, projects, and learning milestones only.
+- **Tests passed**: Backend unittest suite (9 tests); frontend TypeScript check and Vite production build.
+- **Tests failing**: None known.
+- **Next immediate task**: Phase 3 — implement a persisted interview session and adaptive text interview using an explicitly configured free AI provider, with text fallback and tests.

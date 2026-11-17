@@ -47,6 +47,7 @@ def get_current_user_status():
             user_id=user["id"] if user else DEFAULT_USER_ID,
             email=user["email"] if user else "developer@local.host",
             full_name=user["full_name"] if user else "Engineering Leader",
+            onboarding_completed=bool(user["onboarding_completed"]) if user else False,
             profile=profile_data,
             settings=settings_data
         )

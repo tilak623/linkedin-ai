@@ -61,8 +61,74 @@ export interface UserAuthStatus {
   user_id: string;
   email: string;
   full_name: string;
+  onboarding_completed: boolean;
   profile: UserProfile | null;
   settings: UserSettings | null;
+}
+
+export type SkillTier = 'implemented' | 'studied' | 'explored' | 'discovered';
+export type ProjectMaturity = 'completed' | 'in_development' | 'experiment' | 'learning_exercise' | 'planned';
+
+export interface Skill {
+  id: string;
+  user_id: string;
+  name: string;
+  proficiency_level: SkillTier;
+  category: string | null;
+  verified_by_project: boolean;
+  evidence_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Project {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  maturity: ProjectMaturity;
+  github_url: string | null;
+  repo_name: string | null;
+  tech_stack: string[];
+  key_achievements: string[];
+  screenshots: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningMilestone {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  milestone_date: string;
+  lessons_learned: string | null;
+  created_at: string;
+}
+
+export interface KnowledgeSearchResult {
+  entity_type: string;
+  entity_id: string;
+  title: string;
+  snippet: string;
+}
+
+export interface OnboardingInput {
+  full_name: string;
+  headline: string | null;
+  summary: string | null;
+  career_direction: string | null;
+  target_audience: string | null;
+  writing_voice_notes: string | null;
+  seniority_level: string | null;
+  initial_skills: Array<{
+    name: string;
+    proficiency_level: SkillTier;
+    category: string | null;
+    evidence_notes: string | null;
+    verified_by_project: boolean;
+  }>;
 }
 
 export interface ApiResponse<T> {

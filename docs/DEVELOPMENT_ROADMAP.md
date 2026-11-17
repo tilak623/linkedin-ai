@@ -8,8 +8,8 @@ This roadmap defines the phased implementation strategy for the **Personal Brand
 
 ```
 Phase 0: Technical Discovery & Planning   [COMPLETED]
-Phase 1: Functional Application Foundation [READY TO START]
-Phase 2: Professional Memory & Onboarding
+Phase 1: Functional Application Foundation [COMPLETED]
+Phase 2: Professional Memory & Onboarding [COMPLETED]
 Phase 3: AI Interviewer (Voice & Text)
 Phase 4: AI Technology Research Engine
 Phase 5: Content Creation Studio
@@ -31,20 +31,21 @@ Phase 13: Reliability, Testing & Final Release
 - **Objective**: Audit environment, design architecture, assess free tiers, formulate database schema, create roadmap and documentation.
 - **Deliverables**: Architecture, Schema, API Docs, Roadmap, Progress Trackers.
 
-### Phase 1: Functional Application Foundation (Next Phase)
-- **Objective**: Establish the core running stack (FastAPI backend + React frontend + local/cloud DB connectivity).
+### Phase 1: Functional Application Foundation (Completed)
+- **Objective**: Establish the local running stack (FastAPI backend + React frontend + SQLite). Cloud connectivity is planned for a later phase.
 - **Deliverables**:
-  - Backend skeleton: FastAPI app, CORS, unified error handling, structured logging, health check endpoint.
-  - Database layer: SQLite local database initialization with async engine, Supabase client integration.
+  - Backend foundation: FastAPI app, CORS, error handling, structured logging, health check endpoint.
+  - Local database layer: SQLite initialization and local profile/settings persistence.
   - Frontend foundation: Vite + React 18 + TypeScript shell, modern dark/light design system, responsive sidebar navigation across all 12 modules.
-  - End-to-end connectivity test verifying frontend-backend-database pipeline.
+  - Basic frontend/backend connectivity for health, local profile, and settings. Supabase connectivity remains planned.
 
-### Phase 2: Professional Memory and Onboarding
+### Phase 2: Professional Memory and Onboarding (Completed)
 - **Objective**: Build the user onboarding wizard and persistent knowledge library.
 - **Deliverables**:
   - Interactive onboarding flow capturing skills, background, target audience, and writing preferences.
   - Skill management with strict 4-level hierarchy (*implemented*, *studied*, *explored*, *discovered*).
-  - Searchable knowledge library with full-text search and duplicate topic detection.
+  - Project and learning milestone CRUD with duplicate name/title detection.
+  - Searchable SQLite FTS5 knowledge library and JSON export for profile, skills, projects, and milestones.
 
 ### Phase 3: AI Interviewer (Voice & Text)
 - **Objective**: Build the daily interview system.

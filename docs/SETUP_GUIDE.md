@@ -12,6 +12,8 @@ Ensure the following tools are installed on your Windows machine:
 
 ## 2. Environment Variables Configuration
 
+The current Phase 2 onboarding and memory features do not require AI or Supabase credentials. Configure these only when the corresponding integrations are implemented.
+
 Create a `.env` file in the root directory (or in `backend/.env`):
 
 ```env
@@ -76,17 +78,7 @@ npm.cmd run dev
 ```
 Web Workspace will be live at `http://localhost:5173`.
 
-### Step 3.3 Desktop Companion Setup
-Open a third terminal:
-```powershell
-cd desktop
-
-# Install electron dependencies
-npm.cmd install
-
-# Launch Electron desktop wrapper
-npm.cmd start
-```
+The Electron desktop companion is a future phase and is not included in the current repository.
 
 ---
 

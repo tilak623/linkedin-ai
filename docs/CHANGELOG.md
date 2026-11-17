@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [Unreleased] - Phase 2: Professional Memory and Onboarding
+
+### Added
+- First-run onboarding for the local professional profile and initial skill records.
+- CRUD API and UI workflows for skills, projects, and learning milestones.
+- SQLite FTS5 search, duplicate name/title checks, and JSON export for profile and memory records.
+- Database migration for the onboarding-completion flag.
+- API tests covering onboarding, CRUD, duplicate detection, search/index rebuild, URL validation, and export.
+- `.gitignore` rules for local environment files, databases, caches, dependencies, and frontend build output.
+
+### Changed
+- Clarified which product features are planned versus currently implemented in the README and architecture/security/privacy documentation.
+
 ## [0.2.0] - 2026-11-17 (Phase 1: Functional Application Foundation)
 
 ### Added

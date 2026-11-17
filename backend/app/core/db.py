@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
+    onboarding_completed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -190,6 +191,14 @@ CREATE TABLE IF NOT EXISTS sync_queue (
     created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+    user_id UNINDEXED,
+    entity_type UNINDEXED,
+    entity_id UNINDEXED,
+    title,
+    content
+);
 """
 
 class Database:
@@ -211,6 +220,11 @@ class Database:
         os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
         with self.get_connection() as conn:
             conn.executescript(SCHEMA_SQL)
+            user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+            if "onboarding_completed" not in user_columns:
+                conn.execute(
+                    "ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0"
+                )
             
             # Check if default user exists
             cursor = conn.execute("SELECT id FROM users WHERE id = ?", (DEFAULT_USER_ID,))
@@ -238,6 +252,66 @@ class Database:
                      "Engineering leaders, peers, tech founders", now, now)
                 )
                 conn.commit()
+            self.rebuild_knowledge_index(conn)
+
+    @staticmethod
+    def rebuild_knowledge_index(conn: sqlite3.Connection) -> None:
+        conn.execute("DELETE FROM knowledge_fts")
+
+        profile_rows = conn.execute(
+            "SELECT id, user_id, headline, summary, career_direction, target_audience, writing_voice_notes "
+            "FROM professional_profiles"
+        ).fetchall()
+        for row in profile_rows:
+            content = " ".join(
+                value for value in (
+                    row["summary"], row["career_direction"], row["target_audience"],
+                    row["writing_voice_notes"],
+                ) if value
+            )
+            conn.execute(
+                "INSERT INTO knowledge_fts (user_id, entity_type, entity_id, title, content) "
+                "VALUES (?, 'profile', ?, ?, ?)",
+                (row["user_id"], row["id"], row["headline"] or "Professional profile", content),
+            )
+
+        for table, title_column, content_columns in (
+            ("skills", "name", ("category", "proficiency_level", "evidence_notes")),
+            ("projects", "title", ("description", "maturity", "tech_stack", "key_achievements")),
+            ("learning_milestones", "title", ("description", "category", "lessons_learned")),
+        ):
+            rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+            for row in rows:
+                content = " ".join(str(row[column]) for column in content_columns if row[column])
+                conn.execute(
+                    "INSERT INTO knowledge_fts (user_id, entity_type, entity_id, title, content) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (row["user_id"], table, row["id"], row[title_column], content),
+                )
+        conn.commit()
+
+    def index_knowledge(
+        self, user_id: str, entity_type: str, entity_id: str, title: str, content: str
+    ) -> None:
+        with self.get_connection() as conn:
+            conn.execute(
+                "DELETE FROM knowledge_fts WHERE user_id = ? AND entity_type = ? AND entity_id = ?",
+                (user_id, entity_type, entity_id),
+            )
+            conn.execute(
+                "INSERT INTO knowledge_fts (user_id, entity_type, entity_id, title, content) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (user_id, entity_type, entity_id, title, content),
+            )
+            conn.commit()
+
+    def remove_knowledge(self, user_id: str, entity_type: str, entity_id: str) -> None:
+        with self.get_connection() as conn:
+            conn.execute(
+                "DELETE FROM knowledge_fts WHERE user_id = ? AND entity_type = ? AND entity_id = ?",
+                (user_id, entity_type, entity_id),
+            )
+            conn.commit()
 
     def execute_sync(self, query: str, params: tuple = ()) -> None:
         with self.get_connection() as conn:

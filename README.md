@@ -2,12 +2,14 @@
 
 An intelligent, authentic, and zero-cost AI-powered personal branding assistant that transforms your daily engineering activities, technical learning, code repositories, and career milestones into a credible and consistent professional presence on LinkedIn.
 
+> **Development status:** This repository currently contains the local FastAPI/SQLite and React foundation, professional onboarding, and persistent profile/skills/projects/milestones memory with full-text search. The features below describe the product vision; most integrations and workspaces are still planned and should not be considered implemented.
+
 ---
 
-## 🌟 Key Features
+## 🌟 Product Vision
 
-1. **AI Daily Interviewer (Voice & Text)**: Conducts adaptive daily standup-style interviews to capture what you built, learned, solved, or observed today. Never makes you fill questionnaires; understands technical nuance.
-2. **Professional Memory & Knowledge Library**: Persistent, evolving skill hierarchy that strictly distinguishes what you *implemented*, *studied*, *explored*, or *discovered*.
+1. **AI Daily Interviewer (Voice & Text)**: Planned adaptive interviews to capture what you built, learned, solved, or observed.
+2. **Professional Memory & Knowledge Library**: Local profile, skills, projects, and learning milestones are implemented; adaptive memory features remain planned.
 3. **Technology Research Engine**: Multi-source daily tech intelligence (Hacker News, Reddit, ArXiv, GitHub Trending, tech publications) with automated credibility ranking and claim verification.
 4. **AI Content Creation Studio**: Context-aware draft generator with authentic human tone, strict anti-cliché filters, fact-checking verification, and mandatory human approval workflow.
 5. **AI Media Generation Studio**: Programmatic, high-resolution infographic, architecture diagram, code snippet, and carousel generation (100% free, zero paid subscriptions).
@@ -26,24 +28,19 @@ An intelligent, authentic, and zero-cost AI-powered personal branding assistant 
 ```
 ├── backend/                  # Python FastAPI application
 │   ├── app/
-│   │   ├── api/              # API endpoints for all modules
-│   │   ├── core/             # Configuration, security, database connectors
-│   │   ├── models/           # Pydantic & SQLAlchemy data schemas
-│   │   └── services/         # AI engines, research, media, sync, linkedin
-│   ├── tests/                # Comprehensive unit and integration test suite
+│   │   ├── api/v1/           # Health, settings, profile, and memory endpoints
+│   │   ├── core/             # Configuration, SQLite, errors, and logging
+│   │   └── models/           # Pydantic request/response schemas
+│   ├── tests/                # Backend unit and API tests
 │   ├── requirements.txt      # Python dependencies
 │   └── run.py                # Backend server entrypoint
 ├── frontend/                 # React + TypeScript + Vite web workspace
 │   ├── src/
-│   │   ├── components/       # Reusable UI components & design system
-│   │   ├── pages/            # 12 primary workspace modules
-│   │   ├── services/         # API client, Web Speech API, offline cache
+│   │   ├── components/       # Reusable UI components
+│   │   ├── pages/            # Workspace views
+│   │   ├── services/         # Backend API client
 │   │   └── types/            # TypeScript interfaces
 │   └── package.json          # Frontend dependencies
-├── desktop/                  # Electron Windows Desktop Companion
-│   ├── main.js               # Background service, tray, notifications
-│   ├── preload.js            # Secure IPC bridge
-│   └── package.json          # Electron configuration
 └── docs/                     # Full system specifications & guides
 ```
 
@@ -67,12 +64,7 @@ npm install
 npm run dev
 ```
 
-### 3. Desktop Companion
-```bash
-cd desktop
-npm install
-npm start
-```
+The Electron desktop companion is part of the future roadmap and is not included in the current repository.
 
 ---
 

@@ -68,9 +68,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, health, authStatus }) =>
                 <AlertTriangle className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-bold text-white mb-1">0 Pending</div>
+            <div className="text-2xl font-bold text-white mb-1">In development</div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Strict Human-in-the-Loop: No public actions occur without your explicit, manual approval.
+              Post generation, fact checking, and publishing are planned for a later phase.
             </p>
           </div>
           <button
@@ -91,9 +91,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, health, authStatus }) =>
                 <Brain className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-bold text-white mb-1">4 Tiers Active</div>
+            <div className="text-2xl font-bold text-white mb-1">4 Skill Levels</div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Distinguishing Implemented, Studied, Explored, and Discovered skills to guarantee accuracy.
+              Record skills as Implemented, Studied, Explored, or Discovered in your professional memory.
             </p>
           </div>
           <button
@@ -114,9 +114,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, health, authStatus }) =>
                 <Shield className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-bold text-white mb-1">$0.00 / Free</div>
+            <div className="text-2xl font-bold text-white mb-1">Not connected</div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Operating on Google Gemini free tier, Web Speech API, and local SQLite offline caching.
+              Phase 2 uses local SQLite. AI providers and cloud services are not connected yet.
             </p>
           </div>
           <button
@@ -139,32 +139,32 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, health, authStatus }) =>
           <div className="p-3.5 rounded-lg bg-surface-950 border border-surface-800/80">
             <div className="text-[11px] text-slate-400">Compute Threads</div>
             <div className="text-lg font-bold text-slate-100 mt-1">
-              {health?.resources.cpu_cores || 14} Logical Cores
+              {health?.resources.cpu_cores ?? '—'} Logical Cores
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Intel Core Ultra</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">Reported by local backend</div>
           </div>
           <div className="p-3.5 rounded-lg bg-surface-950 border border-surface-800/80">
             <div className="text-[11px] text-slate-400">Physical Memory</div>
             <div className="text-lg font-bold text-slate-100 mt-1">
-              {health?.resources.total_ram_gb || 15.55} GB Total
+              {health?.resources.total_ram_gb ?? '—'} GB Total
             </div>
             <div className="text-[10px] text-emerald-400 mt-0.5">
-              {health?.resources.available_ram_gb || 4.0} GB Free
+              {health?.resources.available_ram_gb ?? '—'} GB Available
             </div>
           </div>
           <div className="p-3.5 rounded-lg bg-surface-950 border border-surface-800/80">
             <div className="text-[11px] text-slate-400">Storage Capacity</div>
             <div className="text-lg font-bold text-slate-100 mt-1">
-              {health?.resources.free_disk_gb || 840} GB Free
+              {health?.resources.free_disk_gb ?? '—'} GB Free
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Fast SSD Storage</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">Reported by local backend</div>
           </div>
           <div className="p-3.5 rounded-lg bg-surface-950 border border-surface-800/80">
             <div className="text-[11px] text-slate-400">Database Engine</div>
             <div className="text-lg font-bold text-slate-100 mt-1 capitalize">
-              {health?.database || 'SQLite (Connected)'}
+              {health?.database || 'Status unavailable'}
             </div>
-            <div className="text-[10px] text-brand-400 mt-0.5">Offline-First Mirror</div>
+            <div className="text-[10px] text-brand-400 mt-0.5">Local database</div>
           </div>
         </div>
       </div>

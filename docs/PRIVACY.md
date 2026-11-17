@@ -1,5 +1,7 @@
 # Privacy Policy & Privacy Centre Specification
 
+> **Status:** This is the intended privacy design. The current Phase 2 app stores profile and memory data in local SQLite and exports those records; cloud deletion, interview/post exports, and integration revocation are not yet implemented.
+
 ## 1. User Data Ownership Principles
 
 In the **Personal Branding AI Agent**, you retain complete, unequivocal ownership over all your professional data, learning records, and interview transcripts.

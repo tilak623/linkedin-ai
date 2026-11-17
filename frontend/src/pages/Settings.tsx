@@ -49,7 +49,7 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  const handleExportData = () => {
+  const handleExportSettings = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(settings, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
@@ -67,7 +67,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <ShieldCheck className="w-5 h-5 text-brand-400" />
           <div>
             <h3 className="text-sm font-semibold text-slate-100">Settings & Privacy Centre</h3>
-            <p className="text-xs text-slate-400">Manage desktop reminders, zero-cost AI engines, and local data ownership.</p>
+            <p className="text-xs text-slate-400">Manage saved preferences. Desktop reminders and AI providers are not connected in this phase.</p>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed">
-          The Windows Desktop Companion sends gentle reminder notifications every 15 minutes until you complete your daily interview. Reminders automatically stop once the standup is completed and reset the next morning.
+          Reminder preferences can be saved, but notifications are not active because the Windows Desktop Companion has not been implemented yet.
         </p>
 
         <div className="flex items-center gap-3 pt-2">
@@ -116,7 +116,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed">
-          Strictly zero-cost architecture. Choose between free cloud tier models or CPU-quantized local models.
+          Choose a preferred provider for future use. No AI provider is currently connected or called by the application.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
@@ -129,8 +129,8 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Google Gemini 2.5</div>
-            <div className="text-[11px] text-slate-400">Free Tier (15 RPM)</div>
-            <div className="text-[10px] text-emerald-400 mt-2 font-mono">Cloud Zero-Cost</div>
+            <div className="text-[11px] text-slate-400">Not connected</div>
+            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
           </button>
 
           <button
@@ -142,8 +142,8 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Groq (Llama 3.3)</div>
-            <div className="text-[11px] text-slate-400">Free Tier (30 RPM)</div>
-            <div className="text-[10px] text-emerald-400 mt-2 font-mono">Ultra-Fast Inference</div>
+            <div className="text-[11px] text-slate-400">Not connected</div>
+            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
           </button>
 
           <button
@@ -155,8 +155,8 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Local SLM (CPU)</div>
-            <div className="text-[11px] text-slate-400">SmolLM2-1.7B / Qwen2.5</div>
-            <div className="text-[10px] text-indigo-400 mt-2 font-mono">100% Offline Mode</div>
+            <div className="text-[11px] text-slate-400">Not installed</div>
+            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
           </button>
         </div>
       </div>
@@ -165,16 +165,16 @@ export const Settings: React.FC<SettingsProps> = ({
       <div className="p-6 rounded-xl bg-surface-900 border border-surface-800 space-y-4">
         <h4 className="text-sm font-bold text-slate-100">Privacy Centre & Data Ownership</h4>
         <p className="text-xs text-slate-300 leading-relaxed">
-          You retain complete ownership over your records. All memories and posts are stored in your local SQLite database (<code className="font-mono text-brand-400">brand_agent.db</code>) and encrypted Supabase tables.
+          Phase 2 profile and professional-memory records are stored in local SQLite. Cloud storage, encryption at rest, and full privacy controls are not implemented yet.
         </p>
 
         <div className="flex flex-wrap gap-3 pt-2">
           <button
-            onClick={handleExportData}
+            onClick={handleExportSettings}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/50 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export Complete Knowledge Library (.json)</span>
+            <span>Export Settings (.json)</span>
           </button>
         </div>
       </div>

@@ -1,150 +1,79 @@
 # Development Continuation Guide
 
-This document maintains complete execution context for the **Personal Branding AI Agent**, ensuring continuity across sessions and Antigravity context limits.
+## What the application currently does
 
----
+The current local application provides a React workspace and FastAPI backend backed by SQLite. Phase 2 supports professional-profile onboarding, skill/project/learning-milestone management, full-text search, and JSON export of those records. The other workspace areas are not yet fully implemented and may contain static sample content.
 
-## 1. What the Application Does
+## Current architecture
 
-The Personal Branding AI Agent is an authentic, intelligent branding manager focused on LinkedIn. It conducts adaptive daily voice/text interviews to learn what you worked on, tracks your skills and projects with accurate proficiency distinctions, researches industry breakthroughs daily from credible sources, drafts human-sounding LinkedIn posts, programmatically renders infographics and carousels, manages publishing with mandatory human approval, and provides a Windows desktop tray companion with gentle interview reminders.
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS.
+- **Backend**: Python, FastAPI, Pydantic, SQLite.
+- **Memory search**: SQLite FTS5, rebuilt from stored profile, skill, project, and milestone records during backend startup and updated by the memory API.
+- **Current user model**: A single local default user. Authentication, cloud storage, RLS, and multi-user isolation are not implemented.
+- **Not present yet**: Electron desktop app, AI service integrations, LinkedIn/GitHub integrations, cloud sync, and installer.
 
----
+## Completed phases
 
-## 2. Current Architecture
+- Phase 0: Initial discovery and planning documents.
+- Phase 1: Local application foundation, health/settings endpoints, and frontend shell.
+- Phase 2: Onboarding, profile persistence, skills/projects/milestones CRUD, duplicate detection, SQLite full-text search, JSON export.
 
-- **Desktop Layer**: Windows Electron tray app handling background reminders (15-min intervals), local file folder selection with read-only security, and offline SQLite caching.
-- **Frontend Layer**: React 18 + TypeScript + Vite single-page application featuring 12 dedicated workspaces, dark/light theme toggle, and Web Speech API voice capture.
-- **Backend Layer**: Python 3.13 + FastAPI + Uvicorn + Pydantic v2 async REST API providing modular endpoints for interviews, memory, research, content generation, and publishing.
-- **AI Engine Layer**: Hybrid zero-cost multi-provider engine:
-  - Cloud: Google Gemini 2.5 Flash / Groq (Llama 3.3 70B) Free Tiers for reasoning, interviewing, and writing.
-  - Local/Offline: Quantized CPU SLMs (e.g., Qwen2.5-1.5B / SmolLM2-1.7B) sized strictly within the system's ~4GB available RAM budget.
-- **Data & Auth Layer**:
-  - Cloud: Supabase PostgreSQL with Row Level Security (RLS) enforcing multi-user data isolation.
-  - Local: Embedded SQLite database (`brand_agent.db`) with zero-lock connection pooling for zero-network offline functionality.
+## Incomplete phases
 
----
+- Phase 3: Persisted adaptive AI interviewer (text first, voice fallback).
+- Phase 4: Technology research.
+- Phase 5: Content creation and approval workflow.
+- Phase 6: Media generation.
+- Phase 7: GitHub and portfolio intelligence.
+- Phase 8: Authorized LinkedIn integration and manual fallback.
+- Phase 9: Calendar and real analytics.
+- Phase 10: Networking and profile recommendations.
+- Phase 11: Electron desktop companion.
+- Phase 12: Cloud deployment and synchronization.
+- Phase 13: Reliability, end-to-end testing, and Windows installer.
 
-## 3. Selected Technology Stack
+## Known limitations
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React
-- **Desktop**: Electron, Node.js
-- **Backend**: Python 3.13, FastAPI, Uvicorn, Pydantic v2, HTTPX, Pillow, SQLite3
-- **Database**: SQLite (Local Embedded) + Supabase (Cloud Postgres)
-- **Voice**: Web Speech API (Browser/Electron Native) + Windows SAPI fallback
-- **Cost**: $0.00 / Zero-Cost Strict Architecture
+- Current API routes use a fixed local user ID; do not expose this backend as a multi-user service.
+- AI and external integrations are not active. API keys are not required for Phase 2.
+- The memory export contains only profile, skills, projects, and learning milestones.
+- Some non-memory workspace pages still use static sample data.
 
----
+## Environment variables
 
-## 4. Completed Phases
+No environment variables are required for the local Phase 2 workflows. Optional server settings are documented in `docs/SETUP_GUIDE.md`. Do not commit `.env` files or API keys.
 
-- **Phase 0 (Technical Discovery and Planning)**: Completed.
-  - Environment audited: 14-core Intel CPU, 16GB RAM, integrated Intel GPU, 840GB free SSD.
-  - Python 3.13 and Node.js v24 runtimes verified.
-  - Official LinkedIn API boundaries analyzed (`w_member_social` direct posting vs manual browser-assisted fallback).
-  - Multi-user isolated database schema designed.
-  - 14-file documentation suite established.
-- **Phase 1 (Functional Application Foundation)**: Completed.
-  - Python FastAPI backend live with health, settings, auth, and database endpoints.
-  - SQLite zero-lock connection manager configured and seeded.
-  - Automated unit test suite passing 100% (6/6 tests).
-  - React 18 + TypeScript + Tailwind CSS frontend fully built and verified with production build (12 workspace views).
+## Start the application
 
----
+Backend terminal:
 
-## 5. Incomplete Phases
-
-- Phase 2: Professional Memory & Onboarding Wizard (Next)
-- Phase 3: AI Interviewer (Voice & Text)
-- Phase 4: AI Technology Research Engine
-- Phase 5: Content Creation Studio
-- Phase 6: Media Generation Studio
-- Phase 7: GitHub and Portfolio Intelligence
-- Phase 8: LinkedIn Integration & Publishing
-- Phase 9: Smart Calendar and Analytics
-- Phase 10: Networking and Profile Optimization
-- Phase 11: Windows Desktop Companion (Electron)
-- Phase 12: Cloud Deployment and Synchronization
-- Phase 13: Final Testing, Reliability & Windows Installer
-
----
-
-## 6. Current Bugs
-
-None.
-
----
-
-## 7. Outstanding Tasks
-
-1. Begin **Phase 2: Professional Memory & Onboarding Wizard**:
-   - Implement onboarding wizard for career direction, skills, and writing voice.
-   - Implement backend endpoints for skill CRUD with strict 4-level proficiency verification (*implemented*, *studied*, *explored*, *discovered*).
-   - Implement project tracking and milestone ingestion endpoints.
-   - Add full-text search and duplicate-topic detection to the knowledge library.
-
----
-
-## 8. Required Environment Variables
-
-When running locally, store in `.env` or `backend/.env`:
-```env
-# Server
-PORT=8000
-HOST=127.0.0.1
-ENVIRONMENT=development
-CORS_ORIGINS=["http://localhost:5173", "http://127.0.0.1:5173"]
-
-# Database (Supabase Free Tier - Optional)
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-DATABASE_URL=sqlite:///./brand_agent.db
-
-# Free AI Providers (Zero Cost)
-GEMINI_API_KEY=
-GROQ_API_KEY=
-```
-
----
-
-## 9. How to Start the Application
-
-### Start Backend
 ```powershell
 cd backend
+python -m pip install -r requirements.txt
 python run.py
-# API runs at http://127.0.0.1:8000
-# Interactive API docs at http://127.0.0.1:8000/docs
 ```
 
-### Start Frontend
+Frontend terminal:
+
 ```powershell
 cd frontend
+npm.cmd install
 npm.cmd run dev
-# Web app runs at http://127.0.0.1:5173
 ```
 
----
+Open `http://localhost:5173`; backend API docs are at `http://localhost:8000/docs`.
 
-## 10. How to Run Tests
+## Run tests
 
-### Backend Tests
 ```powershell
-python -m unittest backend/tests/test_api.py
+python -m unittest discover -s backend/tests -v
 ```
 
-### Frontend Build Verification
 ```powershell
 cd frontend
 npm.cmd run build
 ```
 
----
+## Exact next development step
 
-## 11. The Exact Next Development Step
-
-Proceed to **Phase 2: Professional Memory & Onboarding Wizard**:
-1. Create `backend/app/api/v1/memory.py` with endpoints for skills, projects, learning milestones, and full-text search.
-2. Build the interactive Onboarding Wizard in the frontend to guide new users through career goals, skills, and writing style preferences.
-3. Wire the Memory and Portfolio pages to live API endpoints.
-4. Add automated tests for skill level transitions and search duplicate detection.
+Start Phase 3 by implementing persisted interview sessions and messages, then a text-based adaptive interviewer behind a provider interface. Keep responses evidence-grounded, preserve user input on provider/network failure, use a free provider only when configured, and add API tests before connecting the interview UI. Do not claim voice synthesis, AI generation, or offline inference until implemented and tested.

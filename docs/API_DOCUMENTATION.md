@@ -2,6 +2,8 @@
 
 Base URL: `http://localhost:8000/api/v1`
 
+> **Implementation status:** The foundation and Phase 2 profile/memory endpoints described below are implemented. The later-module routes in this document are planned API contracts and are not available yet.
+
 All responses are formatted in JSON with standardized envelope schemas:
 ```json
 {
@@ -17,17 +19,20 @@ All responses are formatted in JSON with standardized envelope schemas:
 ## 1. System & Health
 
 ### `GET /health`
-Returns the status of backend services, database connectivity, and active AI engine.
+Returns the local backend/database status and host resource information.
+
+### `GET /auth/me`
+Returns the current local profile summary and whether first-run onboarding has been completed. Authentication is not implemented; this is a single-user local application.
 
 ### `GET /system/resources`
-Returns current host CPU, RAM, and disk utilization to ensure local AI fits within safe limits.
+Planned. Resource information is currently included in `GET /health`.
 
 ---
 
 ## 2. Onboarding & Professional Memory
 
 ### `POST /profile/onboard`
-Submits initial career objectives, skills, writing preferences, and GitHub username.
+Creates or updates the local professional profile and can save initial skills.
 - **Request Body**:
   ```json
   {
@@ -45,13 +50,31 @@ Submits initial career objectives, skills, writing preferences, and GitHub usern
   ```
 
 ### `GET /profile`
-Retrieves the user's complete professional profile, verified skills, and roadmap.
+Retrieves the local professional profile.
 
-### `POST /memory/skills`
-Creates or updates a skill with strict proficiency level (`implemented`, `studied`, `explored`, `discovered`).
+### `/memory/skills`
+- `GET /memory/skills` lists saved skills.
+- `POST /memory/skills` creates a skill with proficiency level (`implemented`, `studied`, `explored`, or `discovered`).
+- `PATCH /memory/skills/{id}` updates a skill.
+- `DELETE /memory/skills/{id}` deletes a skill.
+
+### `/memory/projects`
+- `GET /memory/projects` lists saved projects.
+- `POST /memory/projects` creates a project.
+- `PATCH /memory/projects/{id}` updates a project.
+- `DELETE /memory/projects/{id}` deletes a project.
+
+### `/memory/milestones`
+- `GET /memory/milestones` lists learning milestones.
+- `POST /memory/milestones` creates a milestone.
+- `PATCH /memory/milestones/{id}` updates a milestone.
+- `DELETE /memory/milestones/{id}` deletes a milestone.
 
 ### `GET /memory/search?q={query}`
-Searches through all stored skills, project achievements, interview records, and past posts.
+Searches profile, skill, project, and learning-milestone text using the local SQLite full-text index.
+
+### `GET /memory/export`
+Exports the local profile, skills, projects, and learning milestones as JSON.
 
 ---
 

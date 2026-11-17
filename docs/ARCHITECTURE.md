@@ -1,5 +1,7 @@
 # System Architecture Specification
 
+> **Status:** This is the target architecture. The current implementation is a local FastAPI/SQLite backend and React frontend with Phase 2 profile and professional-memory features. Cloud synchronization, AI services, LinkedIn integrations, and the Electron desktop companion are not implemented yet.
+
 ## 1. High-Level Architectural Overview
 
 The **Personal Branding AI Agent** utilizes a modern, resilient, hybrid desktop-and-cloud architecture designed for:
