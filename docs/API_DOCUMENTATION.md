@@ -2,7 +2,7 @@
 
 Base URL: `http://localhost:8000/api/v1`
 
-> **Implementation status:** The foundation and Phase 2 profile/memory endpoints described below are implemented. The later-module routes in this document are planned API contracts and are not available yet.
+> **Implementation status:** The foundation, Phase 2 profile/memory endpoints, and local guided interview endpoints are implemented. The later-module routes in this document are planned API contracts and are not available yet.
 
 All responses are formatted in JSON with standardized envelope schemas:
 ```json
@@ -71,55 +71,43 @@ Retrieves the local professional profile.
 - `DELETE /memory/milestones/{id}` deletes a milestone.
 
 ### `GET /memory/search?q={query}`
-Searches profile, skill, project, and learning-milestone text using the local SQLite full-text index.
+Searches profile, skill, project, learning-milestone, and completed-interview summary text using the local SQLite full-text index.
 
 ### `GET /memory/export`
 Exports the local profile, skills, projects, and learning milestones as JSON.
 
 ---
 
-## 3. AI Interviewer
+## 3. Interviewer (local guided mode)
+
+The current interviewer persists messages in local SQLite and selects rule-based follow-ups. It does not call an external AI provider yet.
+
+### `GET /interviews/today`
+Returns today's interview session or `data: null` if one has not been started.
 
 ### `POST /interviews/start`
-Starts a new daily interview session.
+Starts or resumes today's interview session.
 - **Request Body**:
   ```json
   {
     "mode": "voice" // or "text"
   }
   ```
-- **Response**:
-  ```json
-  {
-    "interview_id": "uuid",
-    "question": "Hey! What was the most interesting programming puzzle or concept you tackled today?",
-    "turn_number": 1
-  }
-  ```
+
+### `GET /interviews/{id}`
+Returns the persisted interview and its messages.
 
 ### `POST /interviews/{id}/turn`
-Submits user answer and returns adaptive follow-up or completion signal.
+Stores an answer and returns the updated session and a content-opportunity classification. Any next question is included as the final AI message in the session.
 - **Request Body**:
   ```json
   {
-    "user_response": "I refactored our caching layer using Redis pipelining and reduced latency by 35%."
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "analysis": {
-      "category": "technical_milestone",
-      "extracted_skills": ["Redis", "Caching", "Performance Optimization"],
-      "proficiency": "implemented"
-    },
-    "is_completed": false,
-    "next_question": "That's a significant drop! What were the unexpected edge cases you ran into with TTLs?"
+    "user_response": "I fixed a bug in my local project and learned how the connection lifecycle works."
   }
   ```
 
 ### `POST /interviews/{id}/complete`
-Manually concludes an interview and triggers automatic synthesis of draft posts and memory entries.
+Manually concludes an interview. It does not generate a post or alter professional memory.
 
 ---
 

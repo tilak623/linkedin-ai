@@ -19,6 +19,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Clarified which product features are planned versus currently implemented in the README and architecture/security/privacy documentation.
 
+## [Unreleased] - Phase 3: Local Guided Interview
+
+### Added
+- Persistent daily interview sessions with text and optional browser speech input.
+- Resume-today, rule-based follow-up selection, manual completion, and no-post handling.
+- API tests for saved turns, adaptive prompts, completion, and no-progress days.
+
+### Limitations
+- The interviewer does not call an AI model and does not synthesize speech. Provider use requires a later consent-gated integration.
+
 ## [0.2.0] - 2026-11-17 (Phase 1: Functional Application Foundation)
 
 ### Added

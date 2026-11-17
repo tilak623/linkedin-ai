@@ -31,7 +31,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'Command Center', icon: LayoutDashboard, phase: 'Phase 1' },
-  { id: 'interview', label: 'AI Interview', icon: Mic, badge: 'Daily', phase: 'Phase 3' },
+  { id: 'interview', label: 'Daily Interview', icon: Mic, badge: 'Daily', phase: 'Phase 3' },
   { id: 'content', label: 'Content Studio', icon: PenTool, phase: 'Phase 5' },
   { id: 'media', label: 'Media Studio', icon: Image, phase: 'Phase 6' },
   { id: 'calendar', label: 'Content Calendar', icon: Calendar, phase: 'Phase 9' },

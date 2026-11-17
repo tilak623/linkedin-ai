@@ -131,6 +131,29 @@ export interface OnboardingInput {
   }>;
 }
 
+export type InterviewMode = 'text' | 'voice';
+
+export interface InterviewMessage {
+  id: string;
+  sender: 'ai' | 'user';
+  content: string;
+  created_at: string;
+}
+
+export interface InterviewSession {
+  id: string;
+  interview_date: string;
+  mode: InterviewMode;
+  completed: boolean;
+  summary: string | null;
+  messages: InterviewMessage[];
+}
+
+export interface InterviewTurnResult {
+  session: InterviewSession;
+  content_opportunity: 'technical_educational_post' | 'learning_experience' | 'project_update' | 'technical_opinion' | 'none';
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

@@ -1,201 +1,235 @@
-import React, { useState, useEffect } from 'react';
-import { Mic, MicOff, Send, Sparkles, Volume2, MessageSquare, AlertCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, Mic, MicOff, Send, Sparkles } from 'lucide-react';
+import { api } from '../services/api';
+import { InterviewMode, InterviewSession, InterviewTurnResult } from '../types';
 
-interface Message {
-  id: string;
-  sender: 'ai' | 'user';
-  text: string;
-  time: string;
+interface SpeechRecognitionResultLike {
+  0: { transcript: string };
 }
 
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: new () => SpeechRecognitionInstance;
+  webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+}
+
+const opportunityLabels: Record<InterviewTurnResult['content_opportunity'], string> = {
+  technical_educational_post: 'Possible technical educational post',
+  learning_experience: 'Possible learning experience',
+  project_update: 'Possible project update',
+  technical_opinion: 'Possible technical opinion',
+  none: 'No post suggested; this is fine',
+};
+
 export const Interview: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: "Hey! Ready for our daily check-in. What was the most interesting technical concept, problem, or project milestone you worked on today?",
-      time: 'Just now',
-    },
-  ]);
+  const [session, setSession] = useState<InterviewSession | null>(null);
+  const [mode, setMode] = useState<InterviewMode>('text');
   const [inputText, setInputText] = useState('');
+  const [contentOpportunity, setContentOpportunity] = useState<InterviewTurnResult['content_opportunity'] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(true);
+  const [error, setError] = useState('');
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   useEffect(() => {
-    // Check Web Speech API availability
-    const SpeechRecognition = (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setSpeechSupported(false);
-    }
+    let active = true;
+    const loadToday = async () => {
+      const result = await api.getTodayInterview();
+      if (!active) return;
+      if (!result.success) {
+        setError(result.error?.message ?? 'Could not load today’s interview.');
+      } else if (result.data) {
+        setSession(result.data);
+        setMode(result.data.mode);
+      }
+      setLoading(false);
+    };
+    void loadToday();
+    return () => {
+      active = false;
+      recognitionRef.current?.stop();
+    };
   }, []);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const startInterview = async () => {
+    setBusy(true);
+    setError('');
+    const result = await api.startInterview(mode);
+    setBusy(false);
+    if (!result.success || !result.data) {
+      setError(result.error?.message ?? 'Could not start the interview.');
+      return;
+    }
+    setSession(result.data);
+  };
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: inputText,
-      time: 'Just now',
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+  const sendAnswer = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    const answer = inputText.trim();
+    if (!session || session.completed || !answer || busy) return;
+    setBusy(true);
+    setError('');
+    const result = await api.submitInterviewTurn(session.id, answer);
+    setBusy(false);
+    if (!result.success || !result.data) {
+      setError(result.error?.message ?? 'Your answer could not be saved. It remains in the input so you can retry.');
+      return;
+    }
+    setSession(result.data.session);
+    setContentOpportunity(result.data.content_opportunity);
     setInputText('');
+  };
 
-    // Simulate adaptive AI follow-up (will connect to backend endpoint in Phase 3)
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: "That's a solid engineering challenge. Did you run into any subtle edge cases or performance bottlenecks when implementing that, and what was the key lesson learned?",
-        time: 'Just now',
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 700);
+  const finishInterview = async () => {
+    if (!session || session.completed || busy) return;
+    setBusy(true);
+    setError('');
+    const result = await api.completeInterview(session.id);
+    setBusy(false);
+    if (!result.success || !result.data) {
+      setError(result.error?.message ?? 'Could not finish the interview.');
+      return;
+    }
+    setSession(result.data);
+    setContentOpportunity(null);
   };
 
   const toggleRecording = () => {
-    if (!speechSupported) {
-      alert('Web Speech API is not supported in this browser window. Please use the text input.');
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      setIsRecording(false);
       return;
     }
-
-    if (!isRecording) {
-      try {
-        const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition ||
-          (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-          const recognition = new SpeechRecognition() as {
-            continuous: boolean;
-            interimResults: boolean;
-            lang: string;
-            start: () => void;
-            stop: () => void;
-            onresult: (e: { results: { [key: number]: { [key: number]: { transcript: string } } } }) => void;
-            onerror: () => void;
-            onend: () => void;
-          };
-          recognition.continuous = false;
-          recognition.interimResults = false;
-          recognition.lang = 'en-US';
-
-          recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setInputText(transcript);
-          };
-
-          recognition.onerror = () => setIsRecording(false);
-          recognition.onend = () => setIsRecording(false);
-
-          recognition.start();
-          setIsRecording(true);
-        }
-      } catch {
-        setIsRecording(false);
-      }
-    } else {
+    const speechWindow = window as SpeechRecognitionWindow;
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setError('Voice recognition is unavailable in this browser. You can continue by typing.');
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript;
+      if (transcript) setInputText((current) => current ? `${current} ${transcript}` : transcript);
+    };
+    recognition.onerror = () => {
       setIsRecording(false);
+      recognitionRef.current = null;
+      setError('Voice recognition failed. Your typed input is still available.');
+    };
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = recognition;
+    setError('');
+    setIsRecording(true);
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+      setIsRecording(false);
+      setError('Could not start voice recognition. You can continue by typing.');
     }
   };
 
+  if (loading) {
+    return <p className="text-sm text-slate-400">Loading today’s interview…</p>;
+  }
+
   return (
-    <div className="flex flex-col h-[calc(100vh-8.5rem)] max-w-4xl mx-auto space-y-4">
-      {/* Top Guidance Note */}
-      <div className="p-3.5 rounded-xl bg-brand-950/20 border border-brand-500/20 flex items-center justify-between text-xs text-brand-300">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-brand-400 shrink-0" />
-          <span>
-            The interviewer asks one adaptive question at a time. Speak or type freely — it understands both small daily lessons and major achievements.
-          </span>
-        </div>
-        <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-brand-500/20 font-semibold">
-          Standup Turn 1/3
-        </span>
+    <div className="mx-auto flex h-[calc(100vh-8.5rem)] max-w-4xl flex-col space-y-4">
+      <div className="flex items-start gap-2 rounded-xl border border-brand-500/20 bg-brand-950/20 p-3.5 text-xs text-brand-200">
+        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
+        <p>
+          The guided interviewer saves each turn locally and chooses follow-ups from your answers. No external AI provider is called in this phase; use text if you don’t want your browser’s speech service to process audio.
+        </p>
       </div>
 
-      {/* Message History Container */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-xl bg-surface-900 border border-surface-800">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                msg.sender === 'ai'
-                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/20'
-                  : 'bg-surface-700 text-slate-200'
-              }`}
-            >
-              {msg.sender === 'ai' ? <Sparkles className="w-4 h-4" /> : 'You'}
+      {!session && (
+        <section className="rounded-xl border border-surface-800 bg-surface-900 p-6">
+          <h2 className="text-base font-semibold text-slate-100">Start today’s reflection</h2>
+          <p className="mt-2 text-sm text-slate-400">Share a project update, something you learned, a problem you solved, or simply say there was no major progress. You can finish whenever you like.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="text-xs text-slate-300" htmlFor="interview-mode">Input mode</label>
+            <select id="interview-mode" value={mode} onChange={(e) => setMode(e.target.value as InterviewMode)} className="rounded-lg border border-surface-700 bg-surface-950 px-3 py-2 text-sm text-slate-100">
+              <option value="text">Text</option>
+              <option value="voice">Voice input</option>
+            </select>
+            <button disabled={busy} onClick={() => void startInterview()} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-50">
+              {busy ? 'Starting…' : 'Start interview'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {session && (
+        <>
+          <div className="flex items-center justify-between rounded-xl border border-surface-800 bg-surface-900 px-4 py-3 text-xs">
+            <div className="text-slate-300">Today · {session.mode === 'voice' ? 'Voice input' : 'Text'} · {session.messages.filter((message) => message.sender === 'user').length} answers</div>
+            {session.completed ? (
+              <span className="inline-flex items-center gap-1 text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Complete</span>
+            ) : (
+              <button onClick={() => void finishInterview()} disabled={busy || Boolean(inputText.trim())} title={inputText.trim() ? 'Send or clear your unsaved answer first' : 'Finish the interview'} className="text-slate-400 underline hover:text-slate-100 disabled:opacity-50">Finish now</button>
+            )}
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-surface-800 bg-surface-900 p-4">
+            {session.messages.map((message) => (
+              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <article className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${message.sender === 'ai' ? 'border border-surface-700/50 bg-surface-800 text-slate-100' : 'bg-brand-600 text-white'}`}>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <time className="mt-1 block text-[10px] opacity-70">{new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</time>
+                </article>
+              </div>
+            ))}
+            {busy && <p className="text-xs text-slate-500">Saving your answer…</p>}
+          </div>
+
+          {session.completed && (
+            <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4">
+              <h3 className="text-sm font-semibold text-emerald-200">Reflection saved</h3>
+              {contentOpportunity && <p className="mt-1 text-xs text-emerald-100/80">{opportunityLabels[contentOpportunity]}</p>}
+              <p className="mt-2 whitespace-pre-wrap text-xs text-slate-300">{session.summary || 'No answer was recorded.'}</p>
             </div>
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                msg.sender === 'ai'
-                  ? 'bg-surface-800 border border-surface-700/50 text-slate-100'
-                  : 'bg-brand-600 text-white shadow-md shadow-brand-600/20'
-              }`}
-            >
-              <p>{msg.text}</p>
-              <div
-                className={`text-[10px] mt-1.5 flex items-center gap-2 ${
-                  msg.sender === 'ai' ? 'text-slate-400' : 'text-brand-200'
-                }`}
-              >
-                <span>{msg.time}</span>
-                {msg.sender === 'ai' && (
-                  <button className="hover:text-slate-200 transition-colors" title="Listen">
-                    <Volume2 className="w-3 h-3" />
+          )}
+
+          {!session.completed && (
+            <form onSubmit={(event) => void sendAnswer(event)} className="rounded-xl border border-surface-800 bg-surface-900 p-3">
+              <div className="flex items-center gap-2">
+                {session.mode === 'voice' && (
+                  <button type="button" onClick={toggleRecording} aria-label={isRecording ? 'Stop voice input' : 'Start voice input'} className={`rounded-xl p-3 ${isRecording ? 'bg-rose-600 text-white' : 'bg-surface-800 text-slate-300 hover:bg-surface-700'}`}>
+                    {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                   </button>
                 )}
+                <input value={inputText} onChange={(e) => setInputText(e.target.value)} maxLength={8000} disabled={busy} className="min-w-0 flex-1 rounded-xl border border-surface-800 bg-surface-950 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none" placeholder={isRecording ? 'Listening…' : 'Type your answer…'} />
+                <button type="submit" disabled={!inputText.trim() || busy} className="rounded-xl bg-brand-600 p-3 text-white hover:bg-brand-500 disabled:opacity-40"><Send className="h-4 w-4" /></button>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+              {error && <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-300"><AlertCircle className="h-3.5 w-3.5" />{error}</p>}
+            </form>
+          )}
+        </>
+      )}
 
-      {/* Input & Controls Dock */}
-      <div className="p-3 rounded-xl bg-surface-900 border border-surface-800 space-y-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleRecording}
-            className={`p-3 rounded-xl transition-all ${
-              isRecording
-                ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-500/30'
-                : 'bg-surface-800 hover:bg-surface-700 text-slate-300 border border-slate-700/50'
-            }`}
-            title={speechSupported ? (isRecording ? 'Stop Recording' : 'Start Voice Input') : 'Speech not supported'}
-          >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </button>
-
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={isRecording ? 'Listening to your voice...' : 'Type your answer, or use voice...'}
-            className="flex-1 bg-surface-950 border border-surface-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
-          />
-
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim()}
-            className="p-3 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:hover:bg-brand-600 text-white transition-all shadow-sm shadow-brand-500/20"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-          <span className="flex items-center gap-1.5">
-            <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-            <span>Voice & text modes switchable seamlessly</span>
-          </span>
-          <span className="text-emerald-400">100% Free Browser Speech API</span>
-        </div>
-      </div>
+      {!session && error && <p role="alert" className="flex items-center gap-1.5 text-sm text-rose-300"><AlertCircle className="h-4 w-4" />{error}</p>}
     </div>
   );
 };

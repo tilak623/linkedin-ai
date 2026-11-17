@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 T = TypeVar("T")
 SkillTier = Literal["implemented", "studied", "explored", "discovered"]
 ProjectMaturity = Literal["completed", "in_development", "experiment", "learning_exercise", "planned"]
+InterviewMode = Literal["text", "voice"]
 
 class ApiResponse(BaseModel, Generic[T]):
     success: bool = True
@@ -169,6 +170,36 @@ class KnowledgeSearchResult(BaseModel):
     entity_id: str
     title: str
     snippet: str
+
+class InterviewStartRequest(BaseModel):
+    mode: InterviewMode = "text"
+
+class InterviewTurnRequest(BaseModel):
+    user_response: str = Field(min_length=1, max_length=8000)
+
+class InterviewMessageRead(BaseModel):
+    id: str
+    sender: Literal["user", "ai"]
+    content: str
+    created_at: str
+
+class InterviewSessionRead(BaseModel):
+    id: str
+    interview_date: str
+    mode: InterviewMode
+    completed: bool
+    summary: Optional[str] = None
+    messages: List[InterviewMessageRead]
+
+class InterviewTurnResult(BaseModel):
+    session: InterviewSessionRead
+    content_opportunity: Literal[
+        "technical_educational_post",
+        "learning_experience",
+        "project_update",
+        "technical_opinion",
+        "none",
+    ]
 
 class UserAuthStatus(BaseModel):
     authenticated: bool

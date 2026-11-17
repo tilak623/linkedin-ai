@@ -1,6 +1,9 @@
 import {
   ApiResponse,
   HealthResponse,
+  InterviewMode,
+  InterviewSession,
+  InterviewTurnResult,
   KnowledgeSearchResult,
   LearningMilestone,
   OnboardingInput,
@@ -156,6 +159,28 @@ class ApiService {
 
   async exportMemory(): Promise<ApiResponse<Record<string, unknown>>> {
     return this.request<Record<string, unknown>>('/memory/export');
+  }
+
+  async getTodayInterview(): Promise<ApiResponse<InterviewSession | null>> {
+    return this.request<InterviewSession | null>('/interviews/today');
+  }
+
+  async startInterview(mode: InterviewMode): Promise<ApiResponse<InterviewSession>> {
+    return this.request<InterviewSession>('/interviews/start', {
+      method: 'POST',
+      body: JSON.stringify({ mode }),
+    });
+  }
+
+  async submitInterviewTurn(id: string, userResponse: string): Promise<ApiResponse<InterviewTurnResult>> {
+    return this.request<InterviewTurnResult>(`/interviews/${encodeURIComponent(id)}/turn`, {
+      method: 'POST',
+      body: JSON.stringify({ user_response: userResponse }),
+    });
+  }
+
+  async completeInterview(id: string): Promise<ApiResponse<InterviewSession>> {
+    return this.request<InterviewSession>(`/interviews/${encodeURIComponent(id)}/complete`, { method: 'POST' });
   }
 }
 

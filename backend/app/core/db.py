@@ -288,6 +288,19 @@ class Database:
                     "VALUES (?, ?, ?, ?, ?)",
                     (row["user_id"], table, row["id"], row[title_column], content),
                 )
+        interviews = conn.execute(
+            """SELECT id, user_id, interview_date, summary FROM interviews
+               WHERE summary IS NOT NULL AND trim(summary) != ''"""
+        ).fetchall()
+        for interview in interviews:
+            conn.execute(
+                "INSERT INTO knowledge_fts (user_id, entity_type, entity_id, title, content) "
+                "VALUES (?, 'interviews', ?, ?, ?)",
+                (
+                    interview["user_id"], interview["id"],
+                    f"Interview {interview['interview_date']}", interview["summary"],
+                ),
+            )
         conn.commit()
 
     def index_knowledge(

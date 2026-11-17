@@ -10,6 +10,7 @@ from backend.app.api.v1.settings import router as settings_router
 from backend.app.api.v1.auth import router as auth_router
 from backend.app.api.v1.memory import router as memory_router
 from backend.app.api.v1.profile import router as profile_router
+from backend.app.api.v1.interviews import router as interviews_router
 
 setup_logging()
 
@@ -47,6 +48,7 @@ app.include_router(settings_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(memory_router, prefix=settings.API_V1_PREFIX)
 app.include_router(profile_router, prefix=settings.API_V1_PREFIX)
+app.include_router(interviews_router, prefix=settings.API_V1_PREFIX)
 
 @app.get("/")
 def root_info():

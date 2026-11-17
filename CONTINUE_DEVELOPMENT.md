@@ -2,13 +2,14 @@
 
 ## What the application currently does
 
-The current local application provides a React workspace and FastAPI backend backed by SQLite. Phase 2 supports professional-profile onboarding, skill/project/learning-milestone management, full-text search, and JSON export of those records. The other workspace areas are not yet fully implemented and may contain static sample content.
+The current local application provides a React workspace and FastAPI backend backed by SQLite. Phase 2 supports professional-profile onboarding, skill/project/learning-milestone management, full-text search, and JSON export. The initial Phase 3 guided interview persists messages locally and supports text plus browser speech input. Other workspace areas are not yet fully implemented and may contain static sample content.
 
 ## Current architecture
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS.
 - **Backend**: Python, FastAPI, Pydantic, SQLite.
-- **Memory search**: SQLite FTS5, rebuilt from stored profile, skill, project, and milestone records during backend startup and updated by the memory API.
+- **Memory search**: SQLite FTS5, rebuilt from stored profile, skill, project, milestone, and completed-interview summary records during backend startup and updated by the APIs.
+- **Interviews**: SQLite-persisted daily sessions with deterministic local follow-ups; there is no language-model call yet.
 - **Current user model**: A single local default user. Authentication, cloud storage, RLS, and multi-user isolation are not implemented.
 - **Not present yet**: Electron desktop app, AI service integrations, LinkedIn/GitHub integrations, cloud sync, and installer.
 
@@ -17,10 +18,11 @@ The current local application provides a React workspace and FastAPI backend bac
 - Phase 0: Initial discovery and planning documents.
 - Phase 1: Local application foundation, health/settings endpoints, and frontend shell.
 - Phase 2: Onboarding, profile persistence, skills/projects/milestones CRUD, duplicate detection, SQLite full-text search, JSON export.
+- Phase 3 (partial): Local persisted interviewer, resume-today workflow, rule-based follow-ups, text input, optional browser speech input.
 
 ## Incomplete phases
 
-- Phase 3: Persisted adaptive AI interviewer (text first, voice fallback).
+- Phase 3 remaining: Explicitly consented AI-provider adapter, adaptive semantic follow-ups, voice synthesis, and expanded tests.
 - Phase 4: Technology research.
 - Phase 5: Content creation and approval workflow.
 - Phase 6: Media generation.
@@ -36,6 +38,7 @@ The current local application provides a React workspace and FastAPI backend bac
 
 - Current API routes use a fixed local user ID; do not expose this backend as a multi-user service.
 - AI and external integrations are not active. API keys are not required for Phase 2.
+- Interview follow-ups are rule-based rather than AI-generated. Browser speech recognition support and privacy behavior vary by browser.
 - The memory export contains only profile, skills, projects, and learning milestones.
 - Some non-memory workspace pages still use static sample data.
 
@@ -76,4 +79,4 @@ npm.cmd run build
 
 ## Exact next development step
 
-Start Phase 3 by implementing persisted interview sessions and messages, then a text-based adaptive interviewer behind a provider interface. Keep responses evidence-grounded, preserve user input on provider/network failure, use a free provider only when configured, and add API tests before connecting the interview UI. Do not claim voice synthesis, AI generation, or offline inference until implemented and tested.
+Complete Phase 3 by designing an opt-in provider interface and clear consent before interview content is sent to any external AI service. Keep the local guided flow as fallback, preserve input on provider/network failure, use only a verified free provider when configured, and add provider/API tests before enabling it. Do not claim AI generation, voice synthesis, or offline inference until implemented and tested.

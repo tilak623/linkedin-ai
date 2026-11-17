@@ -15,7 +15,7 @@ interface HeaderProps {
 
 const VIEW_TITLES: Record<WorkspaceView, { title: string; subtitle: string }> = {
   home: { title: 'Executive Command Center', subtitle: 'Personal branding overview, daily standup, and intelligence' },
-  interview: { title: 'AI Daily Interviewer', subtitle: 'Voice and text reflection to capture daily engineering progress' },
+  interview: { title: 'Daily Interviewer', subtitle: 'Persisted guided reflection; AI provider integration is not connected yet' },
   content: { title: 'AI Content Studio', subtitle: 'Authentic LinkedIn post crafting with human review & anti-cliché filters' },
   media: { title: 'Media Generation Studio', subtitle: 'Programmatic infographics, technical architecture diagrams, & carousels' },
   calendar: { title: 'Smart Content Calendar', subtitle: 'Strategic publication scheduling and cadence optimization' },
