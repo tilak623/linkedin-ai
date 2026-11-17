@@ -26,6 +26,6 @@ services:
       - key: APP_ADMIN_PASSWORD
         sync: false
       - key: APP_SESSION_SECRET
-        sync: false
+        generateValue: true
       - key: SCHEDULER_TRIGGER_TOKEN
-        sync: false
+        generateValue: true
