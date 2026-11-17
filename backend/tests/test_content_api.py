@@ -38,6 +38,7 @@ class TestContentWorkflow(unittest.TestCase):
             LINKEDIN_CLIENT_SECRET="test-secret",
             LINKEDIN_TOKEN_ENCRYPTION_KEY="configured-test-key",
             ENABLE_BACKGROUND_SCHEDULER=False,
+            SCHEDULER_TRIGGER_TOKEN="test-scheduler-token",
         )
         self.settings_patch.start()
         self.client_context = TestClient(app)
@@ -147,6 +148,22 @@ class TestContentWorkflow(unittest.TestCase):
         publish.assert_called_once_with("Approved exact text")
         self.assertEqual(db.fetch_one("SELECT status FROM content_posts WHERE id = ?", (due_id,))["status"], "published")
         self.assertEqual(db.fetch_one("SELECT status FROM content_posts WHERE id = ?", (late_id,))["status"], "missed_schedule")
+
+    def test_external_scheduler_trigger_requires_its_secret(self):
+        with patch("backend.app.api.v1.content.run_scheduler_tick") as tick:
+            denied = self.client.post(
+                "/api/v1/content/scheduler/tick",
+                headers={"Authorization": "Bearer wrong-token"},
+            )
+            accepted = self.client.post(
+                "/api/v1/content/scheduler/tick",
+                headers={"Authorization": "Bearer test-scheduler-token"},
+            )
+
+        self.assertEqual(denied.status_code, 401)
+        self.assertEqual(accepted.status_code, 200)
+        self.assertEqual(accepted.json()["data"]["triggered"], True)
+        tick.assert_called_once_with()
 
     def test_automatic_daily_generation_is_idempotent(self):
         self.add_interview_evidence()

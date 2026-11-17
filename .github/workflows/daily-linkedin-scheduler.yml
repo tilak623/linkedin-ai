@@ -1,0 +1,28 @@
+name: Daily LinkedIn scheduler
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scheduler:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the approved-post scheduler
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SCHEDULER_TRIGGER_TOKEN: ${{ secrets.SCHEDULER_TRIGGER_TOKEN }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$SCHEDULER_TRIGGER_TOKEN" ]; then
+            echo "Configure APP_URL and SCHEDULER_TRIGGER_TOKEN repository secrets."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --retry 5 --retry-all-errors --retry-delay 20 --max-time 120 \
+            --request POST "${APP_URL%/}/api/v1/content/scheduler/tick" \
+            --header "Authorization: Bearer $SCHEDULER_TRIGGER_TOKEN" \
+            --header "Accept: application/json"

@@ -1,6 +1,6 @@
 # Database Schema Specification
 
-> **Status:** This document includes the planned cloud schema. The current application uses local SQLite; Supabase, authentication, and Row Level Security policies are not implemented.
+> **Status:** The application supports local SQLite and a single-owner PostgreSQL database through `DATABASE_URL`. This specification's Supabase authentication, multi-user, synchronization, and Row Level Security policies remain planned and are not implemented.
 
 This document defines the proposed relational schema for **Supabase PostgreSQL** (Cloud) and **SQLite** (Local Offline).
 

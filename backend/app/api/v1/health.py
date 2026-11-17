@@ -65,7 +65,7 @@ def health_check():
         status="healthy" if db_status == "connected" else "degraded",
         environment=settings.ENVIRONMENT,
         version=settings.VERSION,
-        database=f"sqlite ({db_status})",
+        database=f"{db.driver_name} ({db_status})",
         ai_provider=ai_provider,
         resources=resources
     )

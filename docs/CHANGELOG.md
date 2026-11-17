@@ -20,6 +20,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Public hosting, LinkedIn Developer app credentials, and approved member-posting scope are not configured.
 - The draft generator is deterministic, not AI; several product roadmap modules remain unimplemented.
 
+## [Unreleased] - Free-tier deployment support
+
+### Added
+- PostgreSQL connection support alongside the local SQLite default.
+- A bearer-token protected external scheduler endpoint and GitHub Actions daily trigger.
+- A Render free-tier Blueprint for a best-effort deployment without a persistent disk.
+
+### Limitations
+- Free-tier sleep and scheduled-workflow delays can cause posts to be held for review.
+- A PostgreSQL provider, Render service, GitHub secrets, and LinkedIn Developer app still need to be configured by the account owner.
+
 ## [Unreleased] - Phase 2: Professional Memory and Onboarding
 
 ### Added

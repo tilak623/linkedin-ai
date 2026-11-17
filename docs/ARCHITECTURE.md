@@ -1,6 +1,6 @@
 # System Architecture Specification
 
-> **Status:** This remains the target architecture. Implemented today: local FastAPI/SQLite and React, profile/memory, guided rule-based interviews, an evidence-based draft workflow, production app-password/session protection, LinkedIn OAuth/token encryption, and approval-gated scheduled text posting. Cloud synchronization, model-driven AI, research, media, GitHub intelligence, analytics, networking, and the Electron companion are not implemented. See [CURRENT_PROGRESS.md](../CURRENT_PROGRESS.md).
+> **Status:** This remains the target architecture. Implemented today: FastAPI with local SQLite or a configured single-owner PostgreSQL database, React, profile/memory, guided rule-based interviews, evidence-based drafts, production app-password/session protection, LinkedIn OAuth/token encryption, and approval-gated scheduled text posting. A free-tier deployment path uses an external best-effort scheduler; cloud synchronization, model-driven AI, research, media, GitHub intelligence, analytics, networking, and the Electron companion are not implemented. See [CURRENT_PROGRESS.md](../CURRENT_PROGRESS.md).
 
 ## 1. High-Level Architectural Overview
 

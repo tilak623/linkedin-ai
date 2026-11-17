@@ -331,11 +331,11 @@ def export_memory():
         (DEFAULT_USER_ID,),
     )
     skills = db.fetch_all(
-        "SELECT * FROM skills WHERE user_id = ? ORDER BY name COLLATE NOCASE",
+        "SELECT * FROM skills WHERE user_id = ? ORDER BY lower(name)",
         (DEFAULT_USER_ID,),
     )
     projects = db.fetch_all(
-        "SELECT * FROM projects WHERE user_id = ? ORDER BY title COLLATE NOCASE",
+        "SELECT * FROM projects WHERE user_id = ? ORDER BY lower(title)",
         (DEFAULT_USER_ID,),
     )
     milestones = db.fetch_all(
@@ -360,13 +360,12 @@ def search_knowledge(q: str = Query(min_length=1, max_length=200)):
     tokens = re.findall(r"\w+", q, flags=re.UNICODE)
     if not tokens:
         return ApiResponse(success=True, data=[])
-    expression = " AND ".join(f'"{token.replace(chr(34), chr(34) * 2)}"' for token in tokens)
+    conditions = " AND ".join("lower(title || ' ' || content) LIKE ?" for _ in tokens)
     rows = db.fetch_all(
-        """SELECT entity_type, entity_id, title,
-                  snippet(knowledge_fts, 4, '', '', ' … ', 18) AS snippet
+        f"""SELECT entity_type, entity_id, title, substr(content, 1, 200) AS snippet
            FROM knowledge_fts
-           WHERE knowledge_fts MATCH ? AND user_id = ?
-           ORDER BY bm25(knowledge_fts) LIMIT 50""",
-        (expression, DEFAULT_USER_ID),
+           WHERE user_id = ? AND {conditions}
+           ORDER BY lower(title) LIMIT 50""",
+        (DEFAULT_USER_ID, *(f"%{token.lower()}%" for token in tokens)),
     )
     return ApiResponse(success=True, data=[KnowledgeSearchResult(**row) for row in rows])

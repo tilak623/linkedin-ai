@@ -84,6 +84,7 @@ async def protect_api(request: Request, call_next):
         f"{settings.API_V1_PREFIX}/auth/me",
         f"{settings.API_V1_PREFIX}/auth/login",
         f"{settings.API_V1_PREFIX}/linkedin/callback",
+        f"{settings.API_V1_PREFIX}/content/scheduler/tick",
     }
     if (
         settings.APP_ADMIN_PASSWORD

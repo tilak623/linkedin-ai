@@ -2,7 +2,7 @@
 
 An intelligent, authentic, and zero-cost AI-powered personal branding assistant that transforms your daily engineering activities, technical learning, code repositories, and career milestones into a credible and consistent professional presence on LinkedIn.
 
-> **Development status:** The local app includes onboarding and memory, a persisted guided interview, evidence-based post drafts, app-password protection for production, LinkedIn OAuth, and an approval-gated daily publishing scheduler. Draft creation is deterministic and does not call an AI model. Research, media, GitHub analysis, analytics, networking, desktop support, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own HTTPS host and LinkedIn Developer app; no service accounts or secrets are included.
+> **Development status:** The app includes onboarding and memory, a persisted guided interview, evidence-based post drafts, app-password protection, LinkedIn OAuth, and approval-gated publishing. Draft creation is deterministic and does not call an AI model. A best-effort free-tier deployment path uses Render, PostgreSQL, and a GitHub Actions scheduler; it does not guarantee exact-time jobs. Research, media, GitHub analysis, analytics, networking, desktop support, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own provider accounts and LinkedIn Developer app; no service credentials or secrets are included.
 
 ---
 
@@ -69,7 +69,7 @@ Open `http://localhost:5173`. The development server proxies API calls to the lo
 
 ### Private Docker deployment
 
-See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for the persistent local Docker setup and the requirements for public hosting. Never commit `.env` or paste secrets into chat.
+See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for local Docker setup and the best-effort free-tier Render deployment. Never commit `.env` or paste secrets into chat.
 
 ---
 
@@ -77,7 +77,7 @@ See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for the persistent local Doc
 
 - **Authenticity First**: Never invent achievements, fake project metrics, or generate robotic hype posts.
 - **Strict Human Approval**: A LinkedIn post is not scheduled until the user explicitly approves its exact text. Comments, connection requests, and profile edits are not automated.
-- **Local-first Operation**: The implemented interview, memory, and draft workflows run without external AI APIs; public hosting and LinkedIn API access have separate provider requirements.
+- **Local-first Operation**: Local SQLite remains the default; PostgreSQL is supported for cloud hosting. Public hosting and LinkedIn API access have separate provider requirements.
 - **Privacy & Security**: Read-only local file inspection with explicit user authorization; no private tokens committed or leaked.
 
 ---
@@ -88,7 +88,7 @@ See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for the persistent local Doc
 - [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) - Supabase Postgres & SQLite schema
 - [API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) - Complete REST API contract
 - [SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Local development & environment setup
-- [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) - Persistent Docker and public-host requirements
+- [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) - Local Docker and free-tier deployment setup
 - [SECURITY.md](docs/SECURITY.md) - Security policies & credential management
 - [PRIVACY.md](docs/PRIVACY.md) - Privacy protections & user data controls
 - [TESTING.md](docs/TESTING.md) - Test strategy, unit & integration test guides

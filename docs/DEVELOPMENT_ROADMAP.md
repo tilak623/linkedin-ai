@@ -121,7 +121,7 @@ Phase 13: Reliability, Testing & Final Release
   - Supabase cloud synchronization with conflict resolution.
   - Cloud deployment configuration (Render backend + Vercel frontend).
   - Automated local and cloud backup verification.
-  - **Implemented subset:** Docker image, persistent SQLite volume, same-origin frontend serving, and production app-password/session gate. No cloud synchronization or public host provisioning is configured.
+  - **Implemented subset:** Docker image, same-origin frontend serving, production app-password/session gate, PostgreSQL support, Render Blueprint, and external GitHub Actions scheduler hook. No public service, database, or cloud synchronization has been provisioned.
 
 ### Phase 13: Reliability, Testing & Final Release
 - **Objective**: Full end-to-end testing, security audits, and Windows installer.

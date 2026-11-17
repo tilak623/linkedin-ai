@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: linkedin-ai-publisher
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: ENABLE_BACKGROUND_SCHEDULER
+        value: "false"
+      - key: DAILY_POST_TIME
+        value: "09:00"
+      - key: DAILY_POST_TIMEZONE
+        value: Asia/Kolkata
+      - key: LINKEDIN_FRONTEND_URL
+        value: https://linkedin-ai-publisher.onrender.com
+      - key: LINKEDIN_REDIRECT_URI
+        value: https://linkedin-ai-publisher.onrender.com/api/v1/linkedin/callback
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      - key: APP_SESSION_SECRET
+        sync: false
+      - key: SCHEDULER_TRIGGER_TOKEN
+        sync: false

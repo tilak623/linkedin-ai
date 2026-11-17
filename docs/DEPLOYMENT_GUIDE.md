@@ -1,44 +1,74 @@
 # Deployment Guide
 
-## Deployment requirements
+## Free-tier deployment (best effort)
 
-This is a private, single-owner service backed by SQLite. It is not safe to deploy publicly without production app-password/session secrets. Daily jobs run inside the web process; the host must remain awake, retain `/data`, and run exactly one app instance. No hosting provider or LinkedIn Developer app is configured in this repository.
+The repository includes a Render Blueprint in `render.yaml` and a scheduled GitHub Actions workflow. The app can use PostgreSQL in production while retaining SQLite for local development. This setup avoids a paid persistent disk, but it does **not** guarantee the site will always be awake or that a daily job will run at an exact minute. Treat free-tier scheduling as best effort, not business-critical automation.
 
-## Run with persistent Docker storage
+### 1. Create a PostgreSQL database
+
+Create a PostgreSQL database with a provider that offers a free tier, such as [Neon](https://neon.tech/). Copy its PostgreSQL connection URL directly into Render's secret field when prompted. Keep the URL private and use the provider's SSL-enabled connection string.
+
+### 2. Create the Render service
+
+1. In Render, choose **New → Blueprint** and connect this GitHub repository.
+2. Render reads `render.yaml` and proposes a free Docker web service.
+3. Enter the requested secret values in Render:
+   - `DATABASE_URL`: the PostgreSQL connection URL from step 1.
+   - `APP_ADMIN_PASSWORD`: a unique password with at least 16 characters.
+   - `APP_SESSION_SECRET`: a random secret with at least 32 characters.
+   - `SCHEDULER_TRIGGER_TOKEN`: a separate random secret.
+4. Review the plan before creating the service. The Blueprint disables the in-process scheduler because the free web service can sleep.
+5. After deployment, open the service URL and confirm the health endpoint reports `postgresql (connected)`.
+
+Generate random values locally; do not share them in chat or commit them:
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+### 3. Configure the GitHub scheduled trigger
+
+In the repository's **Settings → Secrets and variables → Actions**, add:
+
+- `APP_URL`: the Render service's base URL, without a trailing slash.
+- `SCHEDULER_TRIGGER_TOKEN`: the same value configured in Render.
+
+The workflow at `.github/workflows/daily-linkedin-scheduler.yml` calls the protected scheduler endpoint daily at **03:30 UTC (09:00 Asia/Kolkata)** and can also be started manually from the Actions tab. GitHub scheduled workflows can be delayed; if a due post is more than 15 minutes late, the app holds it for review instead of publishing it late.
+
+### 4. Enable LinkedIn publishing
+
+Create a LinkedIn Developer app and obtain the approved `openid`, `profile`, and `w_member_social` access. In Render, set `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, and `LINKEDIN_TOKEN_ENCRYPTION_KEY`. Generate the encryption key locally:
+
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+In the LinkedIn app, configure this exact HTTPS callback:
+
+`https://linkedin-ai-publisher.onrender.com/api/v1/linkedin/callback`
+
+After adding or changing OAuth settings, reconnect LinkedIn from the deployed Content Studio and verify the authorized profile. The app still requires explicit approval of each exact post before scheduling. LinkedIn access may require product review; hosting does not grant API access.
+
+Keep the encryption key stable. Losing or changing it makes stored LinkedIn tokens unusable. Token refresh is not implemented; reconnect after token expiry.
+
+## Local Docker deployment
 
 1. Install Docker Desktop and create a private `.env` from `.env.example`.
-2. Generate secrets locally (do not send them in chat):
-
-   ```powershell
-   python -c "import secrets; print(secrets.token_urlsafe(48))"
-   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-   ```
-
-   Use the first value for `APP_SESSION_SECRET`; set `APP_ADMIN_PASSWORD` to a long, unique password; use the second value for `LINKEDIN_TOKEN_ENCRYPTION_KEY`.
-3. Before connecting LinkedIn, create a LinkedIn Developer app and request `openid`, `profile`, and `w_member_social` access. Configure an exact HTTPS callback in the Developer app and `.env`:
-
-   `https://YOUR-HOST/api/v1/linkedin/callback`
-
-   Set `LINKEDIN_FRONTEND_URL` to `https://YOUR-HOST`. LinkedIn may require product approval for member posting. A local `http://localhost` callback is not a substitute for the required public HTTPS callback.
-4. Start the app:
+2. Set `APP_ADMIN_PASSWORD`, `APP_SESSION_SECRET`, and, if connecting LinkedIn, the OAuth and encryption values above.
+3. Start the app from the repository root:
 
    ```powershell
    docker compose up --build -d
    ```
 
-5. Open `http://localhost:8000` and sign in with `APP_ADMIN_PASSWORD`. Docker Compose stores SQLite in the persistent `brand_agent_data` volume.
+4. Open `http://localhost:8000`. Docker Compose stores local SQLite data in the persistent `brand_agent_data` volume.
 
-The scheduler creates a daily draft at the configured time when saved evidence exists. Every post requires explicit approval before it is scheduled. Approved posts more than 15 minutes late are held for review rather than published as catch-up. Back up the Docker volume and keep the encryption key; losing it makes saved LinkedIn tokens unusable.
+## Reliability limitations
 
-LinkedIn tokens expire. Reconnect through the Content Studio after expiry; automatic token refresh is not implemented.
+- The free Render service may sleep; the first scheduler request can be delayed while it wakes.
+- GitHub Actions schedules are best effort and may start later than requested.
+- A run delayed by more than 15 minutes marks a scheduled post for review; the app does not silently catch up.
+- Back up the PostgreSQL database and keep the LinkedIn encryption key secure.
+- Free-tier availability, quotas, and provider terms can change. Check current provider terms before relying on this setup.
 
-## Public hosting requirements
-
-Choose a host that supports:
-
-- An always-on, single Docker instance with HTTPS and a stable callback URL.
-- A persistent writable disk mounted at `/data`.
-- Secure environment-variable/secret configuration for the app password, session key, LinkedIn OAuth credentials, and token-encryption key.
-- No automatic multi-replica scaling; SQLite and the in-process scheduler require one instance.
-
-Configure the host using the `Dockerfile` and variables in `.env.example`. The current workspace has no hosting account or LinkedIn Developer app, and Docker is not installed here, so a public service cannot be provisioned or verified from this repository alone. Do not use a host that sleeps or discards its filesystem for this scheduled-publishing workload. Never paste passwords, API keys, or OAuth tokens into chat or commit them to Git.
+Never paste passwords, database URLs, API keys, or OAuth tokens into chat or commit them to Git.

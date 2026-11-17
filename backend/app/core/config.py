@@ -29,7 +29,7 @@ class Settings(BaseModel):
     CORS_ORIGINS: List[str] = Field(default_factory=lambda: parse_cors_origins(os.getenv("CORS_ORIGINS", "")))
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./brand_agent.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     DB_PATH: str = os.getenv("DB_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "brand_agent.db"))
     
     # Supabase (Optional cloud sync)
@@ -51,6 +51,7 @@ class Settings(BaseModel):
     DAILY_POST_TIME: str = os.getenv("DAILY_POST_TIME", "09:00")
     DAILY_POST_TIMEZONE: str = os.getenv("DAILY_POST_TIMEZONE", "Asia/Kolkata")
     ENABLE_BACKGROUND_SCHEDULER: bool = os.getenv("ENABLE_BACKGROUND_SCHEDULER", "true").lower() == "true"
+    SCHEDULER_TRIGGER_TOKEN: str = os.getenv("SCHEDULER_TRIGGER_TOKEN", "")
 
     # Single-owner deployment security. Both values are required in production.
     APP_ADMIN_PASSWORD: str = os.getenv("APP_ADMIN_PASSWORD", "")

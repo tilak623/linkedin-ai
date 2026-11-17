@@ -219,21 +219,86 @@ CREATE TABLE IF NOT EXISTS sync_queue (
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
-    user_id UNINDEXED,
-    entity_type UNINDEXED,
-    entity_id UNINDEXED,
-    title,
-    content
+CREATE TABLE IF NOT EXISTS knowledge_fts (
+    user_id TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    PRIMARY KEY (user_id, entity_type, entity_id)
 );
 """
 
+
+def _postgres_placeholders(query: str) -> str:
+    output = []
+    in_single_quote = False
+    in_double_quote = False
+    index = 0
+    while index < len(query):
+        char = query[index]
+        if char == "'" and not in_double_quote:
+            if in_single_quote and index + 1 < len(query) and query[index + 1] == "'":
+                output.extend(("'", "'"))
+                index += 2
+                continue
+            in_single_quote = not in_single_quote
+            output.append(char)
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+            output.append(char)
+        elif char == "?" and not in_single_quote and not in_double_quote:
+            output.append("%s")
+        else:
+            output.append(char)
+        index += 1
+    return "".join(output)
+
+
+class _PostgreSQLConnection:
+    def __init__(self, connection: Any):
+        self._connection = connection
+
+    def execute(self, query: str, params: tuple = ()):
+        if query.strip().upper() == "BEGIN IMMEDIATE":
+            query = "BEGIN"
+        postgres_params = tuple(int(value) if isinstance(value, bool) else value for value in params)
+        return self._connection.execute(_postgres_placeholders(query), postgres_params)
+
+    def executescript(self, script: str) -> None:
+        for statement in script.split(";"):
+            if statement.strip():
+                self.execute(statement)
+
+    def commit(self) -> None:
+        self._connection.commit()
+
+
 class Database:
-    def __init__(self, db_path: str = settings.DB_PATH):
-        self.db_path = db_path
+    def __init__(self, db_path: str | None = None, database_url: str | None = None):
+        self.db_path = db_path or settings.DB_PATH
+        self.database_url = settings.DATABASE_URL if database_url is None else database_url
+        if self.database_url.startswith("postgres://"):
+            self.database_url = "postgresql://" + self.database_url[len("postgres://"):]
+        self.uses_postgres = self.database_url.startswith("postgresql://")
+
+    @property
+    def driver_name(self) -> str:
+        return "postgresql" if self.uses_postgres else "sqlite"
 
     @contextmanager
     def get_connection(self):
+        if self.uses_postgres:
+            import psycopg
+            from psycopg.rows import dict_row
+
+            connection = psycopg.connect(self.database_url, row_factory=dict_row)
+            try:
+                yield _PostgreSQLConnection(connection)
+            finally:
+                connection.close()
+            return
+
         conn = sqlite3.connect(self.db_path, timeout=10.0, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
@@ -244,17 +309,32 @@ class Database:
 
     def init_db(self):
         """Initializes tables and seeds the local user if not present."""
-        os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+        if not self.uses_postgres:
+            os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
         with self.get_connection() as conn:
             conn.executescript(SCHEMA_SQL)
-            user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+            if self.uses_postgres:
+                user_columns = {
+                    row["column_name"] for row in conn.execute(
+                        """SELECT column_name FROM information_schema.columns
+                           WHERE table_schema = current_schema() AND table_name = 'users'"""
+                    ).fetchall()
+                }
+                linkedin_columns = {
+                    row["column_name"] for row in conn.execute(
+                        """SELECT column_name FROM information_schema.columns
+                           WHERE table_schema = current_schema() AND table_name = 'linkedin_connections'"""
+                    ).fetchall()
+                }
+            else:
+                user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+                linkedin_columns = {
+                    row["name"] for row in conn.execute("PRAGMA table_info(linkedin_connections)").fetchall()
+                }
             if "onboarding_completed" not in user_columns:
                 conn.execute(
                     "ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0"
                 )
-            linkedin_columns = {
-                row["name"] for row in conn.execute("PRAGMA table_info(linkedin_connections)").fetchall()
-            }
             if "member_name" not in linkedin_columns:
                 conn.execute("ALTER TABLE linkedin_connections ADD COLUMN member_name TEXT")
             

@@ -2,7 +2,7 @@
 
 Base URL: `/api/v1` (for local development, `http://localhost:8000/api/v1`).
 
-Implemented endpoints return JSON envelopes with `success`, `data`, `error`, and `timestamp`, except redirect-based OAuth endpoints. If `APP_ADMIN_PASSWORD` is configured, API routes require the app's signed session cookie; health, login/status, and the one-use LinkedIn OAuth callback are public.
+Implemented endpoints return JSON envelopes with `success`, `data`, `error`, and `timestamp`, except redirect-based OAuth endpoints. If `APP_ADMIN_PASSWORD` is configured, API routes require the app's signed session cookie; health, login/status, the one-use LinkedIn OAuth callback, and the scheduler trigger are public at the session layer. The scheduler trigger has its own bearer-token check.
 
 ## Authentication and health
 
@@ -17,7 +17,7 @@ Implemented endpoints return JSON envelopes with `success`, `data`, `error`, and
 - `/memory/skills`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
 - `/memory/projects`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
 - `/memory/milestones`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
-- `GET /memory/search?q={query}` — local SQLite FTS5 search.
+- `GET /memory/search?q={query}` — searches the local SQLite or configured PostgreSQL knowledge index.
 - `GET /memory/export` — JSON export of profile and memory records.
 
 ## Guided interview
@@ -38,6 +38,7 @@ The interview flow is local and rule-based; it does not call an AI model.
 - `PATCH /content/posts/{id}` — edits title and text while the item is an unapproved draft.
 - `POST /content/posts/{id}/approve` — body `{"confirm":true}` records user approval and schedules the exact text at the next daily posting time.
 - `POST /content/posts/{id}/reschedule` — body `{"confirm":true}` re-approves a post that was held because its schedule was missed.
+- `POST /content/scheduler/tick` — external scheduler hook; requires `Authorization: Bearer <SCHEDULER_TRIGGER_TOKEN>`.
 
 The local draft generator is deterministic, not AI-powered. Every public post requires explicit confirmation.
 
@@ -48,7 +49,7 @@ The local draft generator is deterministic, not AI-powered. Every public post re
 - `GET /linkedin/callback` — one-use state-validated callback registered with the LinkedIn Developer app.
 - `DELETE /linkedin/connection` — removes the locally encrypted access token.
 
-The scheduler publishes only explicitly approved, due posts through `POST https://api.linkedin.com/rest/posts` with the configured LinkedIn API version. Tokens are encrypted in SQLite. LinkedIn Developer app credentials and approved `w_member_social` scope are required. The scheduler requires one always-on server process and persistent local storage; posts more than 15 minutes late are held for review.
+The scheduler publishes only explicitly approved, due posts through `POST https://api.linkedin.com/rest/posts` with the configured LinkedIn API version. Tokens are encrypted in the configured database. LinkedIn Developer app credentials and approved `w_member_social` scope are required. For free hosting, GitHub Actions can call the external scheduler hook; timing is best effort, and posts more than 15 minutes late are held for review.
 
 ## Planned, not implemented
 

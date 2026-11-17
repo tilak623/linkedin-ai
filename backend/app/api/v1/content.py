@@ -1,4 +1,5 @@
 import asyncio
+import hmac
 import json
 import logging
 from datetime import date, datetime, time, timedelta, timezone
@@ -7,7 +8,8 @@ from typing import Any
 from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
+import psycopg
 
 from backend.app.core.config import settings
 from backend.app.core.db import DEFAULT_USER_ID, db
@@ -51,6 +53,17 @@ def get_schedule():
             timezone=settings.DAILY_POST_TIMEZONE,
         ),
     )
+
+
+@router.post("/scheduler/tick", response_model=ApiResponse[dict[str, bool]])
+def trigger_scheduler_tick(authorization: str | None = Header(default=None)):
+    expected_token = settings.SCHEDULER_TRIGGER_TOKEN
+    if not expected_token:
+        raise HTTPException(status_code=503, detail="External scheduler is not configured")
+    if not authorization or not hmac.compare_digest(authorization, f"Bearer {expected_token}"):
+        raise HTTPException(status_code=401, detail="Invalid scheduler authorization")
+    run_scheduler_tick()
+    return ApiResponse(success=True, data={"triggered": True})
 
 
 def _source_evidence(conn) -> dict[str, str] | None:
@@ -456,6 +469,6 @@ async def scheduler_loop() -> None:
     while True:
         try:
             await asyncio.to_thread(run_scheduler_tick)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             logger.exception("LinkedIn scheduler database operation failed")
         await asyncio.sleep(30)
