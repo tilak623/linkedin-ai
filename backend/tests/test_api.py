@@ -1,6 +1,7 @@
 import unittest
 import os
 import sys
+from starlette.requests import Request
 
 # Ensure repository root is on sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -62,7 +63,8 @@ class TestBackendFoundationDirect(unittest.TestCase):
         self.assertEqual(restore_response.data.reminder_interval_mins, 15)
 
     def test_auth_me_endpoint(self):
-        response = get_current_user_status()
+        request = Request({"type": "http", "headers": []})
+        response = get_current_user_status(request)
         self.assertTrue(response.success)
         data = response.data
         self.assertTrue(data.authenticated)

@@ -14,5 +14,6 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.ENVIRONMENT == "development",
-        log_level="info"
+        log_level="info",
+        access_log=False,
     )

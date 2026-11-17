@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Sparkles, Bell } from 'lucide-react';
+import { Sun, Moon, Sparkles, LogOut } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { HealthResponse, UserAuthStatus, WorkspaceView } from '../types';
 
@@ -11,6 +11,7 @@ interface HeaderProps {
   loading: boolean;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  onLogout: () => void;
 }
 
 const VIEW_TITLES: Record<WorkspaceView, { title: string; subtitle: string }> = {
@@ -36,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   loading,
   theme,
   onToggleTheme,
+  onLogout,
 }) => {
   const { title, subtitle } = VIEW_TITLES[currentView] || { title: 'Workspace', subtitle: '' };
 
@@ -74,6 +76,14 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-inner">
               {authStatus.full_name ? authStatus.full_name[0] : 'U'}
             </div>
+            <button
+              onClick={onLogout}
+              aria-label="Sign out"
+              title="Sign out"
+              className="rounded-lg p-2 text-slate-400 hover:bg-surface-800 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         )}
       </div>

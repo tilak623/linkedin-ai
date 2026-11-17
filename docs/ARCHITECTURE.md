@@ -1,6 +1,6 @@
 # System Architecture Specification
 
-> **Status:** This is the target architecture. The current implementation is a local FastAPI/SQLite backend and React frontend with Phase 2 profile and professional-memory features. Cloud synchronization, AI services, LinkedIn integrations, and the Electron desktop companion are not implemented yet.
+> **Status:** This remains the target architecture. Implemented today: local FastAPI/SQLite and React, profile/memory, guided rule-based interviews, an evidence-based draft workflow, production app-password/session protection, LinkedIn OAuth/token encryption, and approval-gated scheduled text posting. Cloud synchronization, model-driven AI, research, media, GitHub intelligence, analytics, networking, and the Electron companion are not implemented. See [CURRENT_PROGRESS.md](../CURRENT_PROGRESS.md).
 
 ## 1. High-Level Architectural Overview
 

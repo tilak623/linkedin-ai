@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [Unreleased] - Approval-gated LinkedIn publishing
+
+### Added
+- Production single-owner app-password sessions and protected API routes.
+- Evidence-based local draft creation, draft editing, explicit approval audit, and scheduled post states.
+- LinkedIn OAuth callback with one-use state validation and encrypted local access-token storage.
+- Official LinkedIn Posts API text publishing and single-instance daily scheduler with missed-post review protection.
+- Docker build and persistent SQLite volume configuration.
+- Focused tests for login protection, evidence-only drafts, approval, scheduling, token encryption, and LinkedIn request headers.
+
+### Limitations
+- Public hosting, LinkedIn Developer app credentials, and approved member-posting scope are not configured.
+- The draft generator is deterministic, not AI; several product roadmap modules remain unimplemented.
+
 ## [Unreleased] - Phase 2: Professional Memory and Onboarding
 
 ### Added

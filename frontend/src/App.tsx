@@ -15,6 +15,7 @@ import { Networking } from './pages/Networking';
 import { Analytics } from './pages/Analytics';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
+import { Login } from './pages/Login';
 
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<WorkspaceView>('home');
@@ -76,6 +77,15 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await api.logout();
+    setAuthStatus(null);
+  };
+
+  if (!loading && !authStatus?.authenticated) {
+    return <Login onAuthenticated={() => window.location.reload()} />;
+  }
+
   return (
     <div className={`min-h-screen flex ${theme === 'dark' ? 'dark bg-surface-950 text-slate-100' : 'light bg-slate-50 text-slate-900'}`}>
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
@@ -89,6 +99,7 @@ export const App: React.FC = () => {
           loading={loading}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 p-6 overflow-y-auto">

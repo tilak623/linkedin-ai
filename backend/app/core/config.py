@@ -45,5 +45,15 @@ class Settings(BaseModel):
     LINKEDIN_CLIENT_ID: str = os.getenv("LINKEDIN_CLIENT_ID", "")
     LINKEDIN_CLIENT_SECRET: str = os.getenv("LINKEDIN_CLIENT_SECRET", "")
     LINKEDIN_REDIRECT_URI: str = os.getenv("LINKEDIN_REDIRECT_URI", "http://localhost:8000/api/v1/linkedin/callback")
+    LINKEDIN_FRONTEND_URL: str = os.getenv("LINKEDIN_FRONTEND_URL", "http://localhost:5173")
+    LINKEDIN_API_VERSION: str = os.getenv("LINKEDIN_API_VERSION", "202611")
+    LINKEDIN_TOKEN_ENCRYPTION_KEY: str = os.getenv("LINKEDIN_TOKEN_ENCRYPTION_KEY", "")
+    DAILY_POST_TIME: str = os.getenv("DAILY_POST_TIME", "09:00")
+    DAILY_POST_TIMEZONE: str = os.getenv("DAILY_POST_TIMEZONE", "Asia/Kolkata")
+    ENABLE_BACKGROUND_SCHEDULER: bool = os.getenv("ENABLE_BACKGROUND_SCHEDULER", "true").lower() == "true"
+
+    # Single-owner deployment security. Both values are required in production.
+    APP_ADMIN_PASSWORD: str = os.getenv("APP_ADMIN_PASSWORD", "")
+    APP_SESSION_SECRET: str = os.getenv("APP_SESSION_SECRET", "")
 
 settings = Settings()

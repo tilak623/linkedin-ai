@@ -1,192 +1,55 @@
 # REST API Documentation
 
-Base URL: `http://localhost:8000/api/v1`
+Base URL: `/api/v1` (for local development, `http://localhost:8000/api/v1`).
 
-> **Implementation status:** The foundation, Phase 2 profile/memory endpoints, and local guided interview endpoints are implemented. The later-module routes in this document are planned API contracts and are not available yet.
+Implemented endpoints return JSON envelopes with `success`, `data`, `error`, and `timestamp`, except redirect-based OAuth endpoints. If `APP_ADMIN_PASSWORD` is configured, API routes require the app's signed session cookie; health, login/status, and the one-use LinkedIn OAuth callback are public.
 
-All responses are formatted in JSON with standardized envelope schemas:
-```json
-{
-  "success": true,
-  "data": {},
-  "error": null,
-  "timestamp": "2026-11-16T18:00:00Z"
-}
-```
+## Authentication and health
 
----
+- `GET /health` — backend/database health.
+- `GET /auth/me` — app session status and local profile summary.
+- `POST /auth/login` — body `{"password":"..."}`; sets the HTTP-only session cookie.
+- `POST /auth/logout` — clears the session cookie.
 
-## 1. System & Health
+## Profile and memory
 
-### `GET /health`
-Returns the local backend/database status and host resource information.
+- `GET /profile`, `POST /profile/onboard`
+- `/memory/skills`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
+- `/memory/projects`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
+- `/memory/milestones`: `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}`
+- `GET /memory/search?q={query}` — local SQLite FTS5 search.
+- `GET /memory/export` — JSON export of profile and memory records.
 
-### `GET /auth/me`
-Returns the current local profile summary and whether first-run onboarding has been completed. Authentication is not implemented; this is a single-user local application.
+## Guided interview
 
-### `GET /system/resources`
-Planned. Resource information is currently included in `GET /health`.
+- `GET /interviews/today` — today's interview or `null`.
+- `POST /interviews/start` — starts/resumes a text or voice-input session.
+- `GET /interviews/{id}` — persisted transcript.
+- `POST /interviews/{id}/turn` — saves an answer and returns a rule-based follow-up.
+- `POST /interviews/{id}/complete` — completes the session.
 
----
+The interview flow is local and rule-based; it does not call an AI model.
 
-## 2. Onboarding & Professional Memory
+## Content Studio
 
-### `POST /profile/onboard`
-Creates or updates the local professional profile and can save initial skills.
-- **Request Body**:
-  ```json
-  {
-    "full_name": "Developer Name",
-    "headline": "Full-Stack & AI Systems Engineer",
-    "career_direction": "Building high-performance AI tools",
-    "target_audience": "Tech leads, senior engineers, founders",
-    "github_username": "dev-username",
-    "initial_skills": [
-      {"name": "Python", "proficiency_level": "implemented"},
-      {"name": "FastAPI", "proficiency_level": "implemented"},
-      {"name": "LangChain", "proficiency_level": "studied"}
-    ]
-  }
-  ```
+- `GET /content/schedule` — configured daily time and time zone.
+- `GET /content/posts` — saved drafts and post states.
+- `POST /content/generate` — creates a factual template draft from the latest completed interview, a learning milestone, or an active project. Returns `409` if no evidence exists.
+- `PATCH /content/posts/{id}` — edits title and text while the item is an unapproved draft.
+- `POST /content/posts/{id}/approve` — body `{"confirm":true}` records user approval and schedules the exact text at the next daily posting time.
+- `POST /content/posts/{id}/reschedule` — body `{"confirm":true}` re-approves a post that was held because its schedule was missed.
 
-### `GET /profile`
-Retrieves the local professional profile.
+The local draft generator is deterministic, not AI-powered. Every public post requires explicit confirmation.
 
-### `/memory/skills`
-- `GET /memory/skills` lists saved skills.
-- `POST /memory/skills` creates a skill with proficiency level (`implemented`, `studied`, `explored`, or `discovered`).
-- `PATCH /memory/skills/{id}` updates a skill.
-- `DELETE /memory/skills/{id}` deletes a skill.
+## LinkedIn
 
-### `/memory/projects`
-- `GET /memory/projects` lists saved projects.
-- `POST /memory/projects` creates a project.
-- `PATCH /memory/projects/{id}` updates a project.
-- `DELETE /memory/projects/{id}` deletes a project.
+- `GET /linkedin/status` — OAuth configuration, connected member, and token expiry.
+- `GET /linkedin/connect` — starts LinkedIn's OAuth authorization-code flow.
+- `GET /linkedin/callback` — one-use state-validated callback registered with the LinkedIn Developer app.
+- `DELETE /linkedin/connection` — removes the locally encrypted access token.
 
-### `/memory/milestones`
-- `GET /memory/milestones` lists learning milestones.
-- `POST /memory/milestones` creates a milestone.
-- `PATCH /memory/milestones/{id}` updates a milestone.
-- `DELETE /memory/milestones/{id}` deletes a milestone.
+The scheduler publishes only explicitly approved, due posts through `POST https://api.linkedin.com/rest/posts` with the configured LinkedIn API version. Tokens are encrypted in SQLite. LinkedIn Developer app credentials and approved `w_member_social` scope are required. The scheduler requires one always-on server process and persistent local storage; posts more than 15 minutes late are held for review.
 
-### `GET /memory/search?q={query}`
-Searches profile, skill, project, learning-milestone, and completed-interview summary text using the local SQLite full-text index.
+## Planned, not implemented
 
-### `GET /memory/export`
-Exports the local profile, skills, projects, and learning milestones as JSON.
-
----
-
-## 3. Interviewer (local guided mode)
-
-The current interviewer persists messages in local SQLite and selects rule-based follow-ups. It does not call an external AI provider yet.
-
-### `GET /interviews/today`
-Returns today's interview session or `data: null` if one has not been started.
-
-### `POST /interviews/start`
-Starts or resumes today's interview session.
-- **Request Body**:
-  ```json
-  {
-    "mode": "voice" // or "text"
-  }
-  ```
-
-### `GET /interviews/{id}`
-Returns the persisted interview and its messages.
-
-### `POST /interviews/{id}/turn`
-Stores an answer and returns the updated session and a content-opportunity classification. Any next question is included as the final AI message in the session.
-- **Request Body**:
-  ```json
-  {
-    "user_response": "I fixed a bug in my local project and learned how the connection lifecycle works."
-  }
-  ```
-
-### `POST /interviews/{id}/complete`
-Manually concludes an interview. It does not generate a post or alter professional memory.
-
----
-
-## 4. Technology Research Engine
-
-### `GET /research/daily`
-Fetches verified daily tech trends across Hacker News, ArXiv, Reddit, and GitHub.
-- **Query Params**: `category=ai_ml&min_credibility=0.7`
-
-### `POST /research/refresh`
-Triggers an immediate asynchronous background scan of authorized research sources.
-
----
-
-## 5. Content Creation Studio
-
-### `POST /content/generate`
-Generates 2–3 draft LinkedIn posts from recent interviews, project updates, or research items.
-- **Request Body**:
-  ```json
-  {
-    "source_type": "interview",
-    "source_id": "uuid",
-    "tone": "direct_technical",
-    "format": "technical_breakdown"
-  }
-  ```
-
-### `PUT /content/{id}`
-Updates draft text, hashtags, or formatting.
-
-### `POST /content/{id}/fact-check`
-Runs an anti-hallucination and claim-verification pass against user memory and GitHub evidence.
-
-### `POST /content/{id}/approve`
-**MANDATORY USER ACTION**: Records user approval with timestamp before publishing or scheduling.
-
----
-
-## 6. Media Generation Studio
-
-### `POST /media/generate-infographic`
-Generates a crisp SVG / PNG technical card or code snippet.
-- **Request Body**:
-  ```json
-  {
-    "template": "code_snippet_dark",
-    "code": "def optimize(): pass",
-    "language": "python",
-    "title": "Redis Pipelining Explained"
-  }
-  ```
-
-### `POST /media/generate-carousel`
-Generates a multi-slide PDF/PNG carousel for LinkedIn document posts.
-
----
-
-## 7. LinkedIn Publishing & Fallbacks
-
-### `POST /linkedin/publish`
-Publishes an approved post using the official `w_member_social` API endpoint.
-- **Precondition**: `status == 'approved'`.
-
-### `POST /linkedin/manual-prepare`
-Prepares formatted text, media, and hashtags for one-click manual pasting when direct API is unavailable.
-
----
-
-## 8. Windows Desktop Companion & Reminders
-
-### `GET /desktop/status`
-Returns reminder schedule, idle timer, and background notification status.
-
-### `POST /desktop/reminders/pause`
-Pauses 15-minute reminders for a specified duration (e.g., 60 minutes) or until tomorrow.
-
-### `POST /desktop/reminders/resume`
-Resumes 15-minute reminder schedule.
-
-### `POST /desktop/scan-folder`
-Scans an authorized local directory in read-only mode for markdown notes, architecture diagrams, or code.
+Technology research, AI generation/fact-checking, media generation, GitHub analysis, full content calendar, LinkedIn analytics, networking, Windows desktop integration, cloud sync, and multi-user auth are not currently exposed as implemented endpoints.

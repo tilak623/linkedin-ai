@@ -10,16 +10,16 @@ This roadmap defines the phased implementation strategy for the **Personal Brand
 Phase 0: Technical Discovery & Planning   [COMPLETED]
 Phase 1: Functional Application Foundation [COMPLETED]
 Phase 2: Professional Memory & Onboarding [COMPLETED]
-Phase 3: AI Interviewer (Voice & Text) [IN PROGRESS]
-Phase 4: AI Technology Research Engine
-Phase 5: Content Creation Studio
+Phase 3: Guided Interviewer (Voice & Text) [LOCAL WORKFLOW COMPLETE; AI PENDING]
+Phase 4: AI Technology Research Engine [PLANNED]
+Phase 5: Evidence-based Content Studio [PARTIALLY COMPLETE]
 Phase 6: Media Generation Studio
 Phase 7: GitHub & Portfolio Intelligence
-Phase 8: LinkedIn Integration & Publishing
-Phase 9: Smart Calendar & Analytics
+Phase 8: LinkedIn Integration & Publishing [PARTIALLY COMPLETE]
+Phase 9: Smart Calendar & Analytics [SCHEDULER ONLY]
 Phase 10: Networking & Profile Optimization
 Phase 11: Windows Desktop Companion
-Phase 12: Cloud Deployment & Synchronization
+Phase 12: Private Docker Deployment [LOCAL CONFIG READY; PUBLIC DEPLOYMENT PENDING]
 Phase 13: Reliability, Testing & Final Release
 ```
 
@@ -47,11 +47,11 @@ Phase 13: Reliability, Testing & Final Release
   - Project and learning milestone CRUD with duplicate name/title detection.
   - Searchable SQLite FTS5 knowledge library and JSON export for profile, skills, projects, and milestones.
 
-### Phase 3: AI Interviewer (Voice & Text) (In Progress)
+### Phase 3: Guided Interviewer (Voice & Text) (Local Workflow Complete)
 - **Objective**: Build the daily interview system.
 - **Deliverables**:
   - Local persisted text/voice-input interview workflow and guided follow-ups are implemented.
-  - Pending: consent-gated AI provider integration, semantic follow-ups, voice synthesis, and content opportunity extraction tests.
+  - Pending: consent-gated AI provider integration, semantic follow-ups, and voice synthesis.
 
 ### Phase 4: AI Technology Research Engine
 - **Objective**: Daily automated tech discovery and claim verification.
@@ -68,6 +68,7 @@ Phase 13: Reliability, Testing & Final Release
   - Multi-version draft comparison and rich markdown editor.
   - Fact-checking verification pass.
   - Explicit approval workflow.
+  - **Implemented subset:** deterministic drafts from saved interview, project, or learning evidence; edit, approval audit, and scheduled state. Model generation, claim verification, research-backed drafting, and comparison remain unimplemented.
 
 ### Phase 6: Media Generation Studio
 - **Objective**: 100% free programmatic visual asset generation.
@@ -90,6 +91,7 @@ Phase 13: Reliability, Testing & Final Release
   - Authorized LinkedIn OAuth and `w_member_social` REST API integration.
   - Browser-assisted manual fallback (one-click copy with deep-link) for restricted actions.
   - Pre-publish validation and immutable approval audit log.
+  - **Implemented subset:** LinkedIn OAuth state validation, encrypted access-token storage, official text-post API, exact-text approval, 9 AM local scheduler, and missed-schedule hold. Requires an approved Developer app and HTTPS callback.
 
 ### Phase 9: Smart Calendar and Analytics
 - **Objective**: Content planning and genuine performance tracking.
@@ -97,6 +99,7 @@ Phase 13: Reliability, Testing & Final Release
   - Interactive calendar displaying draft, scheduled, and published states.
   - AI best-time scheduling recommendation engine.
   - Analytics dashboard tracking impressions and engagement (no fabricated metrics).
+  - **Implemented subset:** approval scheduling and a single-instance background publisher only; calendar UI and analytics integrations remain unimplemented.
 
 ### Phase 10: Networking and Profile Optimization
 - **Objective**: Strategic profile improvements and thoughtful networking.
@@ -118,6 +121,7 @@ Phase 13: Reliability, Testing & Final Release
   - Supabase cloud synchronization with conflict resolution.
   - Cloud deployment configuration (Render backend + Vercel frontend).
   - Automated local and cloud backup verification.
+  - **Implemented subset:** Docker image, persistent SQLite volume, same-origin frontend serving, and production app-password/session gate. No cloud synchronization or public host provisioning is configured.
 
 ### Phase 13: Reliability, Testing & Final Release
 - **Objective**: Full end-to-end testing, security audits, and Windows installer.

@@ -209,3 +209,38 @@ class UserAuthStatus(BaseModel):
     onboarding_completed: bool = False
     profile: Optional[UserProfileRead] = None
     settings: Optional[UserSettingsRead] = None
+
+class LoginRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=1024)
+
+class ContentPostRead(BaseModel):
+    id: str
+    title: str
+    topic: Optional[str] = None
+    content_category: str
+    final_content: str
+    hashtags: List[str]
+    status: str
+    scheduled_for: Optional[str] = None
+    published_at: Optional[str] = None
+    linkedin_post_id: Optional[str] = None
+    created_at: str
+    approved_at: Optional[str] = None
+
+class ContentPostUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    final_content: str = Field(min_length=1, max_length=3000)
+
+class ContentApprovalRequest(BaseModel):
+    confirm: bool
+
+class LinkedInStatus(BaseModel):
+    configured: bool
+    connected: bool
+    member_name: Optional[str] = None
+    expires_at: Optional[str] = None
+    expected_profile_url: str
+
+class ContentScheduleRead(BaseModel):
+    daily_post_time: str
+    timezone: str

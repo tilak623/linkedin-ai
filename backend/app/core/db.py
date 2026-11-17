@@ -144,6 +144,33 @@ CREATE TABLE IF NOT EXISTS content_posts (
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS daily_post_runs (
+    run_date TEXT PRIMARY KEY,
+    post_id TEXT,
+    status TEXT NOT NULL,
+    detail TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(post_id) REFERENCES content_posts(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS linkedin_connections (
+    user_id TEXT PRIMARY KEY,
+    encrypted_token TEXT NOT NULL,
+    person_urn TEXT NOT NULL,
+    member_name TEXT,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS linkedin_oauth_states (
+    state TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS media_assets (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -225,6 +252,11 @@ class Database:
                 conn.execute(
                     "ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0"
                 )
+            linkedin_columns = {
+                row["name"] for row in conn.execute("PRAGMA table_info(linkedin_connections)").fetchall()
+            }
+            if "member_name" not in linkedin_columns:
+                conn.execute("ALTER TABLE linkedin_connections ADD COLUMN member_name TEXT")
             
             # Check if default user exists
             cursor = conn.execute("SELECT id FROM users WHERE id = ?", (DEFAULT_USER_ID,))

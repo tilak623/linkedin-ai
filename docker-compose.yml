@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: production
+      HOST: 0.0.0.0
+      PORT: 8000
+      DB_PATH: /data/brand_agent.db
+      LINKEDIN_FRONTEND_URL: ${LINKEDIN_FRONTEND_URL:-http://localhost:8000}
+      LINKEDIN_REDIRECT_URI: ${LINKEDIN_REDIRECT_URI:-http://localhost:8000/api/v1/linkedin/callback}
+      DAILY_POST_TIME: ${DAILY_POST_TIME:-09:00}
+      DAILY_POST_TIMEZONE: ${DAILY_POST_TIMEZONE:-Asia/Kolkata}
+      LINKEDIN_API_VERSION: ${LINKEDIN_API_VERSION:-202611}
+    volumes:
+      - brand_agent_data:/data
+    restart: unless-stopped
+
+volumes:
+  brand_agent_data:

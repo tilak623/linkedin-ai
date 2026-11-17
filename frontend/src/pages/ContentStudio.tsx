@@ -1,128 +1,276 @@
-import React, { useState } from 'react';
-import { PenTool, CheckCircle, ShieldCheck, Copy, ExternalLink, Sparkles, AlertTriangle } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertCircle, CheckCircle, ExternalLink, Link2, Loader2, Send, ShieldCheck, Sparkles, Unlink } from 'lucide-react';
+import { api } from '../services/api';
+import { ContentPost, ContentSchedule, LinkedInStatus } from '../types';
+
+const API_BASE_URL = '/api/v1';
+
+const statusLabel: Record<ContentPost['status'], string> = {
+  draft: 'Needs review',
+  scheduled: 'Approved & scheduled',
+  publishing: 'Publishing',
+  published: 'Published',
+  publish_failed: 'Publishing failed',
+  missed_schedule: 'Missed schedule — review again',
+};
 
 export const ContentStudio: React.FC = () => {
-  const [selectedDraft, setSelectedDraft] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
+  const [posts, setPosts] = useState<ContentPost[]>([]);
+  const [linkedin, setLinkedIn] = useState<LinkedInStatus | null>(null);
+  const [schedule, setSchedule] = useState<ContentSchedule | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
-  const drafts = [
-    {
-      id: 1,
-      title: 'Architecting an Asynchronous Database Layer with Zero External Dependencies',
-      format: 'Technical Deep-Dive',
-      tone: 'Engineering Direct',
-      hook: "Most developers assume you need heavy third-party ORMs for fast SQLite in Python. Here's what we learned building without them:",
-      content: `When designing the backend for an intelligent desktop agent, resource conservation isn't a bonus—it's a requirement.\n\nHere were the constraints:\n1. 100% offline-first capability\n2. Sub-millisecond queries on local SSD\n3. Zero risk of database lock freezes on Windows\n\nInstead of pulling in a massive async ORM with dozens of dependencies, we paired standard library \`sqlite3\` with threadpool delegators and strict transaction boundaries.\n\nKey takeaways:\n• PRAGMA journal_mode matters: on synchronized cloud folders, standard rollback modes prevent concurrency lock stalls.\n• Pure Python dataclasses or Pydantic schemas serialize faster than heavy relational abstractions.\n• Simple architecture is easier to audit and impossible to break with upstream dependency rot.\n\nWhat's your preferred approach for local embedded storage in Python?`,
-      hashtags: ['#Python', '#SoftwareEngineering', '#SystemDesign', '#BackendDevelopment'],
-      status: 'pending_approval',
-    },
-  ];
+  const selectedPost = useMemo(
+    () => posts.find((post) => post.id === selectedId) ?? null,
+    [posts, selectedId],
+  );
 
-  const handleCopy = () => {
-    const post = drafts[selectedDraft];
-    const fullText = `${post.hook}\n\n${post.content}\n\n${post.hashtags.join(' ')}`;
-    navigator.clipboard.writeText(fullText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const loadWorkspace = useCallback(async () => {
+    const [postResponse, linkedInResponse, scheduleResponse] = await Promise.all([
+      api.getContentPosts(),
+      api.getLinkedInStatus(),
+      api.getContentSchedule(),
+    ]);
+    if (postResponse.success && postResponse.data) {
+      setPosts(postResponse.data);
+      setSelectedId((current) => current && postResponse.data?.some((post) => post.id === current)
+        ? current
+        : postResponse.data?.[0]?.id ?? null);
+    } else {
+      setError(postResponse.error?.message ?? 'Could not load saved drafts.');
+    }
+    if (linkedInResponse.success && linkedInResponse.data) {
+      setLinkedIn(linkedInResponse.data);
+    } else {
+      setError(linkedInResponse.error?.message ?? 'Could not load LinkedIn connection status.');
+    }
+    if (scheduleResponse.success && scheduleResponse.data) {
+      setSchedule(scheduleResponse.data);
+    } else {
+      setError(scheduleResponse.error?.message ?? 'Could not load the posting schedule.');
+    }
+  }, []);
+
+  useEffect(() => {
+    const result = new URLSearchParams(window.location.search).get('linkedin');
+    if (result === 'connected') setNotice('LinkedIn connected. Each post still needs your approval.');
+    if (result === 'denied') setError('LinkedIn authorization was declined.');
+    if (result === 'failed') setError('LinkedIn connection failed. Check the app configuration and try again.');
+    if (result) window.history.replaceState({}, '', window.location.pathname);
+    void loadWorkspace();
+  }, [loadWorkspace]);
+
+  useEffect(() => {
+    if (selectedPost) {
+      setTitle(selectedPost.title);
+      setContent(selectedPost.final_content);
+    } else {
+      setTitle('');
+      setContent('');
+    }
+  }, [selectedPost]);
+
+  const runAction = async (action: () => Promise<{ success: boolean; data: ContentPost | null; error?: { message: string } | undefined }>) => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    const response = await action();
+    setBusy(false);
+    if (!response.success || !response.data) {
+      setError(response.error?.message ?? 'The request could not be completed.');
+      return;
+    }
+    setPosts((current) => [response.data!, ...current.filter((post) => post.id !== response.data!.id)]);
+    setSelectedId(response.data.id);
+    if (response.data.status === 'scheduled') {
+      setNotice(`Approved. It is scheduled for ${new Date(response.data.scheduled_for ?? '').toLocaleString()}.`);
+    } else if (response.data.status === 'draft') {
+      setNotice('Draft saved.');
+    }
   };
 
-  const handleOpenLinkedIn = () => {
-    window.open('https://www.linkedin.com/feed/', '_blank');
+  const generateDraft = async () => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    const response = await api.generateContentDraft();
+    setBusy(false);
+    if (!response.success || !response.data) {
+      setError(response.error?.message ?? 'Could not generate a draft.');
+      return;
+    }
+    setPosts((current) => [response.data!, ...current]);
+    setSelectedId(response.data.id);
+    setNotice('Draft created from saved interview, project, or learning evidence. Review it before approval.');
   };
 
-  const activeDraft = drafts[selectedDraft];
+  const saveDraft = () => {
+    if (!selectedPost) return;
+    void runAction(() => api.updateContentDraft(selectedPost.id, title, content));
+  };
+
+  const approveAndSchedule = () => {
+    if (!selectedPost || !window.confirm(
+      'This explicitly approves this exact text for public posting on your LinkedIn account. Continue?',
+    )) return;
+    void runAction(() => api.approveContentPost(selectedPost.id));
+  };
+
+  const rescheduleMissed = () => {
+    if (!selectedPost || !window.confirm(
+      'This post was not published at its missed time. Approve this exact text again for the next daily slot?',
+    )) return;
+    void runAction(() => api.rescheduleMissedPost(selectedPost.id));
+  };
+
+  const disconnect = async () => {
+    if (!window.confirm('Disconnect this LinkedIn account? Scheduled posts will no longer publish.')) return;
+    setBusy(true);
+    const response = await api.disconnectLinkedIn();
+    setBusy(false);
+    if (!response.success) {
+      setError(response.error?.message ?? 'Could not disconnect LinkedIn.');
+      return;
+    }
+    setNotice('LinkedIn disconnected.');
+    await loadWorkspace();
+  };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Principle Callout */}
-      <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/20 flex items-start gap-3 text-xs text-amber-300">
-        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+    <div className="mx-auto max-w-6xl space-y-6">
+      <section className="flex flex-col gap-4 rounded-xl border border-surface-800 bg-surface-900 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <span className="font-semibold text-amber-200">Strict Human Approval Enforced: </span>
-          The AI never publishes autonomously. Every post requires your review, fact-check validation, and manual confirmation.
+          <div className="flex items-center gap-2 text-slate-100">
+            <Link2 className="h-4 w-4 text-brand-400" />
+            <h2 className="font-semibold">LinkedIn publishing connection</h2>
+          </div>
+          <p className="mt-1 text-xs text-slate-400">
+            Uses LinkedIn OAuth and its official Posts API. Expected profile: <a className="text-brand-300 underline" href={linkedin?.expected_profile_url ?? 'https://linkedin.com/tilakc623'} target="_blank" rel="noreferrer">your provided LinkedIn URL</a>. Confirm the authorized member below is the right account.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {linkedin?.connected ? (
+            <>
+              <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300">
+                <CheckCircle className="h-3.5 w-3.5" /> Connected
+              </span>
+              <span className="text-xs text-slate-400">
+                {linkedin.member_name ?? 'Authorized member'}
+                {linkedin.expires_at && ` · access expires ${new Date(linkedin.expires_at).toLocaleDateString()}`}
+              </span>
+              <button onClick={disconnect} disabled={busy} className="flex items-center gap-1.5 rounded-lg border border-surface-700 px-3 py-2 text-xs text-slate-300 hover:bg-surface-800 disabled:opacity-50">
+                <Unlink className="h-3.5 w-3.5" /> Disconnect
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => window.location.assign(`${API_BASE_URL}/linkedin/connect`)}
+              disabled={!linkedin?.configured || busy}
+              className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />               {linkedin?.configured ? 'Connect LinkedIn' : 'Configure LinkedIn OAuth'}
+            </button>
+          )}
+        </div>
+      </section>
+
+      <div className="rounded-xl border border-amber-500/20 bg-amber-950/20 p-4 text-xs leading-relaxed text-amber-200">
+        <div className="flex items-start gap-2">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          <p>
+            Drafts use only evidence saved in your interviews, projects, or learning milestones; no AI provider is called and achievements are not invented.
+            Review and edit every draft. Nothing is published until you explicitly approve it. Approved posts are scheduled for {schedule?.daily_post_time ?? '09:00'} {schedule?.timezone ?? 'Asia/Kolkata'};
+            the             server must be running at the scheduled time. Posts more than 15 minutes late are held for your review, not published as catch-up.
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Drafts List */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Available Drafts</h3>
-          {drafts.map((draft, idx) => (
+      {notice && <p role="status" className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{notice}</p>}
+      {error && <p role="alert" className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"><AlertCircle className="h-4 w-4" />{error}</p>}
+
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Saved posts</h3>
+            <button onClick={generateDraft} disabled={busy} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-500 disabled:opacity-50">
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Generate draft
+            </button>
+          </div>
+          {posts.length === 0 && <p className="rounded-xl border border-surface-800 bg-surface-900 p-4 text-sm text-slate-400">No posts yet. Complete an interview or add evidence to a project or learning milestone, then generate a draft.</p>}
+          {posts.map((post) => (
             <button
-              key={draft.id}
-              onClick={() => setSelectedDraft(idx)}
-              className={`w-full text-left p-4 rounded-xl border transition-all ${
-                selectedDraft === idx
-                  ? 'bg-surface-800 border-brand-500/40 text-slate-100 shadow-md'
-                  : 'bg-surface-900 border-surface-800 text-slate-400 hover:text-slate-200'
-              }`}
+              key={post.id}
+              onClick={() => setSelectedId(post.id)}
+              className={`w-full rounded-xl border p-4 text-left transition-colors ${selectedId === post.id ? 'border-brand-500/40 bg-surface-800' : 'border-surface-800 bg-surface-900 hover:bg-surface-800/60'}`}
             >
-              <div className="flex items-center justify-between text-[11px] mb-1.5">
-                <span className="text-brand-400 font-medium">{draft.format}</span>
-                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono text-[10px]">
-                  Pending Review
-                </span>
-              </div>
-              <div className="text-sm font-semibold line-clamp-2 text-slate-200 mb-2">{draft.title}</div>
-              <div className="text-xs text-slate-400 line-clamp-2">{draft.hook}</div>
+              <span className={`mb-2 inline-flex rounded px-2 py-1 text-[10px] ${post.status === 'published' ? 'bg-emerald-500/10 text-emerald-300' : post.status === 'publish_failed' ? 'bg-red-500/10 text-red-300' : 'bg-amber-500/10 text-amber-300'}`}>
+                {statusLabel[post.status] ?? post.status}
+              </span>
+              <span className="block line-clamp-2 text-sm font-medium text-slate-100">{post.title}</span>
+              {post.scheduled_for && <span className="mt-2 block text-[11px] text-slate-500">{new Date(post.scheduled_for).toLocaleString()}</span>}
             </button>
           ))}
-        </div>
+        </section>
 
-        {/* Post Editor & Preview */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl bg-surface-900 border border-surface-800 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-surface-800 pb-3">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">LinkedIn Post Preview</span>
-                <h4 className="text-sm font-bold text-slate-100 mt-0.5">{activeDraft.title}</h4>
+        <section className="space-y-4 rounded-xl border border-surface-800 bg-surface-900 p-5">
+          {selectedPost ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-800 pb-4">
+                <div>
+                  <h3 className="font-semibold text-slate-100">Review post</h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {selectedPost.status === 'draft' ? 'Edit the draft before approving.' : statusLabel[selectedPost.status] ?? selectedPost.status}
+                  </p>
+                </div>
+                {selectedPost.status === 'published' && selectedPost.linkedin_post_id && (
+                  <a href="https://www.linkedin.com/feed/" target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-brand-300 hover:text-brand-200">
+                    View LinkedIn feed <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>Anti-Cliché Verified</span>
-                </span>
+              <label className="block text-xs font-medium text-slate-300">
+                Title
+                <input value={title} onChange={(event) => setTitle(event.target.value)} disabled={selectedPost.status !== 'draft'} maxLength={200} className="mt-1.5 w-full rounded-lg border border-surface-700 bg-surface-950 px-3 py-2 text-sm text-slate-100 disabled:opacity-60" />
+              </label>
+              <label className="block text-xs font-medium text-slate-300">
+                LinkedIn post text
+                <textarea value={content} onChange={(event) => setContent(event.target.value)} disabled={selectedPost.status !== 'draft'} maxLength={3000} rows={14} className="mt-1.5 w-full resize-y rounded-lg border border-surface-700 bg-surface-950 px-3 py-3 text-sm leading-relaxed text-slate-100 disabled:opacity-60" />
+              </label>
+              {selectedPost.status === 'publish_failed' && (
+                <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
+                  Publishing did not return a confirmed result. Check your LinkedIn feed before creating or approving another copy to avoid duplicates.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-slate-500">{content.length}/3000 characters</span>
+                {selectedPost.status === 'draft' && (
+                  <div className="flex gap-2">
+                    <button onClick={saveDraft} disabled={busy || !title.trim() || !content.trim()} className="rounded-lg border border-surface-700 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-surface-800 disabled:opacity-50">Save edits</button>
+                    <button onClick={approveAndSchedule} disabled={busy || !linkedin?.connected} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
+                      <Send className="h-3.5 w-3.5" /> Approve &amp; schedule
+                    </button>
+                  </div>
+                )}
+                {selectedPost.status === 'missed_schedule' && (
+                  <button onClick={rescheduleMissed} disabled={busy || !linkedin?.connected} className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
+                    <Send className="h-3.5 w-3.5" /> Re-approve &amp; reschedule
+                  </button>
+                )}
               </div>
+            </>
+          ) : (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center text-slate-400">
+              <Sparkles className="h-8 w-8 text-slate-600" />
+              <p className="text-sm">Generate a draft from your saved professional evidence.</p>
             </div>
-
-            {/* Post Content Body */}
-            <div className="p-4 rounded-lg bg-surface-950 border border-surface-800/80 font-sans text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-              <p className="font-medium text-slate-100 mb-3">{activeDraft.hook}</p>
-              <p>{activeDraft.content}</p>
-              <div className="mt-4 pt-3 border-t border-surface-800/60 flex flex-wrap gap-1.5 text-xs text-brand-400 font-mono">
-                {activeDraft.hashtags.map((h) => (
-                  <span key={h}>{h}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span>Fact-checked against daily interview</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-surface-800 hover:bg-surface-700 text-slate-200 border border-slate-700/50 transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copied ? 'Copied to Clipboard!' : 'Copy Post'}</span>
-                </button>
-
-                <button
-                  onClick={handleOpenLinkedIn}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-all shadow-sm shadow-brand-500/20"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open LinkedIn to Publish</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
+        </section>
       </div>
     </div>
   );

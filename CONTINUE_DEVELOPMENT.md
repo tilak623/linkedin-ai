@@ -1,82 +1,28 @@
 # Development Continuation Guide
 
-## What the application currently does
+## Current product state
 
-The current local application provides a React workspace and FastAPI backend backed by SQLite. Phase 2 supports professional-profile onboarding, skill/project/learning-milestone management, full-text search, and JSON export. The initial Phase 3 guided interview persists messages locally and supports text plus browser speech input. Other workspace areas are not yet fully implemented and may contain static sample content.
+The local application provides profile onboarding, skills/projects/milestones CRUD, FTS5 search/export, and persisted guided interviews. The content workflow creates an evidence-based template from saved interview/project/learning notes, lets the owner edit it, records approval, and can schedule the approved text through LinkedIn's official API after OAuth setup.
 
-## Current architecture
+Production mode has a single-owner app-password/session gate, encrypts LinkedIn tokens at rest, and serves the React build from FastAPI. Docker uses a persistent SQLite volume. Public hosting is not configured; a stable HTTPS host and a LinkedIn Developer app with approved `w_member_social` access are required before actual publishing.
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS.
-- **Backend**: Python, FastAPI, Pydantic, SQLite.
-- **Memory search**: SQLite FTS5, rebuilt from stored profile, skill, project, milestone, and completed-interview summary records during backend startup and updated by the APIs.
-- **Interviews**: SQLite-persisted daily sessions with deterministic local follow-ups; there is no language-model call yet.
-- **Current user model**: A single local default user. Authentication, cloud storage, RLS, and multi-user isolation are not implemented.
-- **Not present yet**: Electron desktop app, AI service integrations, LinkedIn/GitHub integrations, cloud sync, and installer.
+## Important constraints
 
-## Completed phases
+- Draft generation is deterministic and does not call an AI model.
+- Every LinkedIn post requires explicit approval of the exact text. Do not remove the approval step.
+- The scheduled publisher requires one always-on server process. Posts more than 15 minutes late are held for review.
+- This is a single-user local SQLite app. Do not scale it to multiple replicas or users.
+- Never ask for or commit user passwords, OAuth client secrets, access tokens, or encryption keys.
+- Research, fact-checking, media generation, GitHub analysis, calendar UI, analytics, networking, desktop integration, cloud sync, and multi-user auth are incomplete.
 
-- Phase 0: Initial discovery and planning documents.
-- Phase 1: Local application foundation, health/settings endpoints, and frontend shell.
-- Phase 2: Onboarding, profile persistence, skills/projects/milestones CRUD, duplicate detection, SQLite full-text search, JSON export.
-- Phase 3 (partial): Local persisted interviewer, resume-today workflow, rule-based follow-ups, text input, optional browser speech input.
+## Run and test
 
-## Incomplete phases
-
-- Phase 3 remaining: Explicitly consented AI-provider adapter, adaptive semantic follow-ups, voice synthesis, and expanded tests.
-- Phase 4: Technology research.
-- Phase 5: Content creation and approval workflow.
-- Phase 6: Media generation.
-- Phase 7: GitHub and portfolio intelligence.
-- Phase 8: Authorized LinkedIn integration and manual fallback.
-- Phase 9: Calendar and real analytics.
-- Phase 10: Networking and profile recommendations.
-- Phase 11: Electron desktop companion.
-- Phase 12: Cloud deployment and synchronization.
-- Phase 13: Reliability, end-to-end testing, and Windows installer.
-
-## Known limitations
-
-- Current API routes use a fixed local user ID; do not expose this backend as a multi-user service.
-- AI and external integrations are not active. API keys are not required for Phase 2.
-- Interview follow-ups are rule-based rather than AI-generated. Browser speech recognition support and privacy behavior vary by browser.
-- The memory export contains only profile, skills, projects, and learning milestones.
-- Some non-memory workspace pages still use static sample data.
-
-## Environment variables
-
-No environment variables are required for the local Phase 2 workflows. Optional server settings are documented in `docs/SETUP_GUIDE.md`. Do not commit `.env` files or API keys.
-
-## Start the application
-
-Backend terminal:
+Local development instructions are in [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md). Persistent Docker and public-host requirements are in [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md).
 
 ```powershell
-cd backend
-python -m pip install -r requirements.txt
-python run.py
-```
-
-Frontend terminal:
-
-```powershell
-cd frontend
-npm.cmd install
-npm.cmd run dev
-```
-
-Open `http://localhost:5173`; backend API docs are at `http://localhost:8000/docs`.
-
-## Run tests
-
-```powershell
-python -m unittest discover -s backend/tests -v
-```
-
-```powershell
-cd frontend
+python -m unittest discover -s backend\tests -v
+Set-Location frontend
 npm.cmd run build
 ```
 
-## Exact next development step
-
-Complete Phase 3 by designing an opt-in provider interface and clear consent before interview content is sent to any external AI service. Keep the local guided flow as fallback, preserve input on provider/network failure, use only a verified free provider when configured, and add provider/API tests before enabling it. Do not claim AI generation, voice synthesis, or offline inference until implemented and tested.
+See [CURRENT_PROGRESS.md](CURRENT_PROGRESS.md) for user choices and deployment blockers.

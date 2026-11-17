@@ -1,39 +1,29 @@
 # Current Development Status
 
-## Current development status
+## Implemented
 
-- **Current phase**: Phase 3 (AI Interviewer) — in progress
-- **Completed modules**:
-  - **Phase 0**: Initial technical discovery and product/architecture documentation.
-  - **Phase 1**: Local FastAPI + SQLite backend, React + TypeScript frontend shell, health/settings endpoints, and local API connectivity.
-  - **Phase 2**:
-    - Profile onboarding saves the user's name, professional background, goals, audience, and writing preferences.
-    - Skills support create, read, update, and delete with `implemented`, `studied`, `explored`, and `discovered` levels.
-    - Projects and learning milestones support create, read, update, and delete.
-    - SQLite FTS5 search covers profiles, skills, projects, milestones, and completed interview summaries; exact duplicate names/titles are rejected.
-    - Professional profile, skills, projects, and milestones can be exported as JSON.
-  - **Phase 3 initial local workflow**:
-    - Interview sessions and messages persist in SQLite and can be resumed during the local day.
-    - Text and browser speech-input modes are available.
-    - Local rule-based follow-ups classify learning, project, challenge, or no-post answers; users can complete at any time.
-- **In-progress modules**:
-  - Phase 3: opt-in free AI provider integration, privacy consent, and voice-output support.
-- **Pending modules**:
-  - Phase 4: Technology research and source verification.
-  - Phase 5: Content generation, fact checking, editing, and approval workflow.
-  - Phase 6: Media generation.
-  - Phase 7: GitHub and portfolio integrations.
-  - Phase 8: Authorized LinkedIn integration and manual publishing workflow.
-  - Phase 9: Calendar and real analytics.
-  - Phase 10: Networking and profile recommendations.
-  - Phase 11: Windows Electron companion.
-  - Phase 12: Cloud deployment, synchronization, and multi-user authentication.
-  - Phase 13: Reliability, full end-to-end testing, and Windows installer.
-- **Known limitations**:
-  - The app currently uses a single local default user; authentication and multi-user isolation are not implemented.
-  - Interview follow-ups use local rules, not an AI model; browser speech recognition availability and processing vary by browser.
-  - AI, LinkedIn, GitHub, cloud sync, and desktop capabilities remain planned. Existing screens for these areas may still contain static examples.
-  - JSON export includes profile, skills, projects, and learning milestones only.
-- **Tests passed**: Backend unittest suite (11 tests); frontend TypeScript check and Vite production build.
-- **Tests failing**: None known.
-- **Next immediate task**: Complete Phase 3 with an opt-in free AI provider integration, privacy notice/consent, and tests; do not send interview content to a provider without explicit consent.
+- **Foundation and professional memory:** FastAPI, SQLite/FTS5, React, onboarding, profile, skills, projects, milestones, search, and JSON export.
+- **Guided interview:** persisted text and browser speech-input sessions with local rule-based follow-ups. No language model or voice synthesis is connected.
+- **Private deployment foundation:** production startup requires a strong single-owner app password and session-signing secret; authenticated API calls use a secure cookie. Docker build and persistent SQLite volume configuration are included.
+- **Evidence-based content workflow:** drafts are created only from saved interview, project, or learning evidence; edit and save drafts; explicit approval and an audit record before scheduling.
+- **LinkedIn publishing:** OAuth state validation, encrypted token storage, member identity display, official Posts API text publishing, scheduled daily processing, and a 15-minute late-post hold.
+
+## Not complete
+
+- Public deployment: no hosting account, stable HTTPS callback URL, or LinkedIn Developer app is configured. Docker is not installed in the current environment, so the image has not been built or deployed.
+- LinkedIn authorization and real posts: require the user's own Developer app with approved `w_member_social` access and explicit OAuth consent. Do not enter credentials in chat.
+- LinkedIn access tokens expire; reconnect after the expiry date shown in the Content Studio.
+- AI model generation, external research, claim verification, media generation, GitHub analysis, calendar UI, analytics, networking, desktop companion, cloud sync, and multi-user support remain unimplemented.
+- The scheduler runs in one web process with SQLite; it requires an always-on single instance and persistent storage.
+- The app uses a single local profile and is not suitable for multiple users.
+
+## User's posting preferences
+
+- Expected profile URL: `https://linkedin.com/tilakc623`
+- Schedule: 9:00 AM Asia/Kolkata
+- Focus: software engineering learning and projects, using saved profile, projects, and interview notes
+- Publishing mode: official LinkedIn API only after explicit approval of each post
+
+## Verification
+
+Backend test suite: 19 tests passing. Frontend TypeScript check and Vite production build pass. Docker image build was not run because Docker is unavailable in this environment.

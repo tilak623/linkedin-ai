@@ -154,6 +154,34 @@ export interface InterviewTurnResult {
   content_opportunity: 'technical_educational_post' | 'learning_experience' | 'project_update' | 'technical_opinion' | 'none';
 }
 
+export interface ContentPost {
+  id: string;
+  title: string;
+  topic: string | null;
+  content_category: string;
+  final_content: string;
+  hashtags: string[];
+  status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'publish_failed' | 'missed_schedule';
+  scheduled_for: string | null;
+  published_at: string | null;
+  linkedin_post_id: string | null;
+  created_at: string;
+  approved_at: string | null;
+}
+
+export interface LinkedInStatus {
+  configured: boolean;
+  connected: boolean;
+  member_name: string | null;
+  expires_at: string | null;
+  expected_profile_url: string;
+}
+
+export interface ContentSchedule {
+  daily_post_time: string;
+  timezone: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

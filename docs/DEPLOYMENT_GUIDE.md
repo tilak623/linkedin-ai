@@ -1,64 +1,44 @@
-# Deployment Guide (Strictly Free Architecture)
+# Deployment Guide
 
-This guide documents how to deploy the **Personal Branding AI Agent** to free cloud hosting platforms with zero recurring cost.
+## Deployment requirements
 
----
+This is a private, single-owner service backed by SQLite. It is not safe to deploy publicly without production app-password/session secrets. Daily jobs run inside the web process; the host must remain awake, retain `/data`, and run exactly one app instance. No hosting provider or LinkedIn Developer app is configured in this repository.
 
-## 1. Cloud Architecture Overview
+## Run with persistent Docker storage
 
-| Component | Free Platform | Free Tier Quota | Role |
-| :--- | :--- | :--- | :--- |
-| **Database & Auth** | Supabase | 500 MB Postgres, 1 GB Storage, 50k MAU | Primary cloud database, user auth, RLS |
-| **Backend API** | Render / Railway / Koyeb | Free Web Service tier (512 MB RAM, free spin-down) | FastAPI REST API Gateway |
-| **Web Frontend** | Vercel / Netlify | Unlimited personal projects, 100 GB bandwidth | React + TypeScript SPA |
-| **Desktop Companion** | Local Windows Installation | Native Electron desktop binary | Background reminders, tray icon, local files |
+1. Install Docker Desktop and create a private `.env` from `.env.example`.
+2. Generate secrets locally (do not send them in chat):
 
----
+   ```powershell
+   python -c "import secrets; print(secrets.token_urlsafe(48))"
+   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   ```
 
-## 2. Supabase Configuration (Free Tier)
+   Use the first value for `APP_SESSION_SECRET`; set `APP_ADMIN_PASSWORD` to a long, unique password; use the second value for `LINKEDIN_TOKEN_ENCRYPTION_KEY`.
+3. Before connecting LinkedIn, create a LinkedIn Developer app and request `openid`, `profile`, and `w_member_social` access. Configure an exact HTTPS callback in the Developer app and `.env`:
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Navigate to **SQL Editor** in your Supabase dashboard.
-3. Paste and run the schema defined in `docs/DATABASE_SCHEMA.md`.
-4. Copy the following credentials from **Project Settings > API**:
-   - `Project URL` -> `SUPABASE_URL`
-   - `anon public key` -> `SUPABASE_ANON_KEY`
-   - `service_role secret` -> `SUPABASE_SERVICE_ROLE_KEY`
+   `https://YOUR-HOST/api/v1/linkedin/callback`
 
----
+   Set `LINKEDIN_FRONTEND_URL` to `https://YOUR-HOST`. LinkedIn may require product approval for member posting. A local `http://localhost` callback is not a substitute for the required public HTTPS callback.
+4. Start the app:
 
-## 3. Frontend Deployment (Vercel / Netlify)
+   ```powershell
+   docker compose up --build -d
+   ```
 
-1. Push your repository to GitHub.
-2. Link the repository to [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
-3. Set the root directory to `frontend`.
-4. Set the build command to `npm run build` and output directory to `dist`.
-5. Set environment variable:
-   - `VITE_API_URL=https://your-backend-api.onrender.com/api/v1`
-   - `VITE_SUPABASE_URL=https://your-project.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY=your-anon-key`
+5. Open `http://localhost:8000` and sign in with `APP_ADMIN_PASSWORD`. Docker Compose stores SQLite in the persistent `brand_agent_data` volume.
 
----
+The scheduler creates a daily draft at the configured time when saved evidence exists. Every post requires explicit approval before it is scheduled. Approved posts more than 15 minutes late are held for review rather than published as catch-up. Back up the Docker volume and keep the encryption key; losing it makes saved LinkedIn tokens unusable.
 
-## 4. Backend Deployment (Render Free Web Service)
+LinkedIn tokens expire. Reconnect through the Content Studio after expiry; automatic token refresh is not implemented.
 
-1. Connect your repository to [Render](https://render.com).
-2. Choose **Web Service** with runtime `Python 3`.
-3. Set root directory to `backend`.
-4. Build command: `pip install -r requirements.txt`.
-5. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-6. Add environment variables:
-   - `ENVIRONMENT=production`
-   - `SUPABASE_URL=https://your-project.supabase.co`
-   - `SUPABASE_ANON_KEY=your-anon-key`
-   - `SUPABASE_SERVICE_ROLE_KEY=your-service-key`
-   - `GEMINI_API_KEY=your-gemini-key`
-   - `GROQ_API_KEY=your-groq-key`
-   - `CORS_ORIGINS=["https://your-frontend.vercel.app"]`
+## Public hosting requirements
 
----
+Choose a host that supports:
 
-## 5. Offline & Hybrid Synchronization
-- The Windows Desktop companion runs locally and maintains an embedded `brand_agent.db` SQLite database.
-- When an internet connection is active, changes staged in `sync_queue` automatically synchronize to Supabase via idempotent batch updates.
-- If cloud services are unreachable or free quotas are exceeded, the app continues operating smoothly in local mode.
+- An always-on, single Docker instance with HTTPS and a stable callback URL.
+- A persistent writable disk mounted at `/data`.
+- Secure environment-variable/secret configuration for the app password, session key, LinkedIn OAuth credentials, and token-encryption key.
+- No automatic multi-replica scaling; SQLite and the in-process scheduler require one instance.
+
+Configure the host using the `Dockerfile` and variables in `.env.example`. The current workspace has no hosting account or LinkedIn Developer app, and Docker is not installed here, so a public service cannot be provisioned or verified from this repository alone. Do not use a host that sleeps or discards its filesystem for this scheduled-publishing workload. Never paste passwords, API keys, or OAuth tokens into chat or commit them to Git.

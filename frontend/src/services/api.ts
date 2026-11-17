@@ -1,11 +1,14 @@
 import {
   ApiResponse,
+  ContentPost,
+  ContentSchedule,
   HealthResponse,
   InterviewMode,
   InterviewSession,
   InterviewTurnResult,
   KnowledgeSearchResult,
   LearningMilestone,
+  LinkedInStatus,
   OnboardingInput,
   Project,
   Skill,
@@ -14,7 +17,7 @@ import {
   UserSettings,
 } from '../types';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+const API_BASE_URL = '/api/v1';
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
@@ -68,6 +71,17 @@ class ApiService {
 
   async getHealth(): Promise<ApiResponse<HealthResponse>> {
     return this.request<HealthResponse>('/health');
+  }
+
+  async login(password: string): Promise<ApiResponse<{ authenticated: boolean }>> {
+    return this.request<{ authenticated: boolean }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  async logout(): Promise<ApiResponse<{ authenticated: boolean }>> {
+    return this.request<{ authenticated: boolean }>('/auth/logout', { method: 'POST' });
   }
 
   async getAuthStatus(): Promise<ApiResponse<UserAuthStatus>> {
@@ -181,6 +195,47 @@ class ApiService {
 
   async completeInterview(id: string): Promise<ApiResponse<InterviewSession>> {
     return this.request<InterviewSession>(`/interviews/${encodeURIComponent(id)}/complete`, { method: 'POST' });
+  }
+
+  async getLinkedInStatus(): Promise<ApiResponse<LinkedInStatus>> {
+    return this.request<LinkedInStatus>('/linkedin/status');
+  }
+
+  async disconnectLinkedIn(): Promise<ApiResponse<{ connected: boolean }>> {
+    return this.request<{ connected: boolean }>('/linkedin/connection', { method: 'DELETE' });
+  }
+
+  async getContentPosts(): Promise<ApiResponse<ContentPost[]>> {
+    return this.request<ContentPost[]>('/content/posts');
+  }
+
+  async getContentSchedule(): Promise<ApiResponse<ContentSchedule>> {
+    return this.request<ContentSchedule>('/content/schedule');
+  }
+
+  async generateContentDraft(): Promise<ApiResponse<ContentPost>> {
+    return this.request<ContentPost>('/content/generate', { method: 'POST' });
+  }
+
+  async updateContentDraft(id: string, title: string, final_content: string): Promise<ApiResponse<ContentPost>> {
+    return this.request<ContentPost>(`/content/posts/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title, final_content }),
+    });
+  }
+
+  async approveContentPost(id: string): Promise<ApiResponse<ContentPost>> {
+    return this.request<ContentPost>(`/content/posts/${encodeURIComponent(id)}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ confirm: true }),
+    });
+  }
+
+  async rescheduleMissedPost(id: string): Promise<ApiResponse<ContentPost>> {
+    return this.request<ContentPost>(`/content/posts/${encodeURIComponent(id)}/reschedule`, {
+      method: 'POST',
+      body: JSON.stringify({ confirm: true }),
+    });
   }
 }
 
