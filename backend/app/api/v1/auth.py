@@ -11,6 +11,7 @@ from backend.app.core.session_auth import (
     SESSION_MAX_AGE_SECONDS,
     create_session_token,
     is_authenticated,
+    revoke_session_token,
 )
 from backend.app.models.schemas import ApiResponse, LoginRequest, UserAuthStatus, UserProfileRead, UserSettingsRead
 
@@ -148,7 +149,8 @@ def login(payload: LoginRequest, request: Request, response: Response) -> ApiRes
 
 
 @router.post("/logout")
-def logout(response: Response) -> ApiResponse[dict]:
+def logout(request: Request, response: Response) -> ApiResponse[dict]:
+    revoke_session_token(request.cookies.get(SESSION_COOKIE_NAME))
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
         httponly=True,

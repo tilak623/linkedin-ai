@@ -14,11 +14,11 @@ jobs:
     steps:
       - name: Trigger the approved-post scheduler
         env:
-          APP_URL: ${{ secrets.APP_URL }}
+          APP_URL: ${{ secrets.APP_URL || 'https://linkedin-ai-publisher.onrender.com' }}
           SCHEDULER_TRIGGER_TOKEN: ${{ secrets.SCHEDULER_TRIGGER_TOKEN }}
         run: |
-          if [ -z "$APP_URL" ] || [ -z "$SCHEDULER_TRIGGER_TOKEN" ]; then
-            echo "Configure APP_URL and SCHEDULER_TRIGGER_TOKEN repository secrets."
+          if [ -z "$SCHEDULER_TRIGGER_TOKEN" ]; then
+            echo "Configure the SCHEDULER_TRIGGER_TOKEN repository secret to match the Render service."
             exit 1
           fi
           curl --fail-with-body --silent --show-error \

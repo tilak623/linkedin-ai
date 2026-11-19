@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.core.config import settings
 from backend.app.core.db import db
+from backend.app.core.session_auth import SESSION_COOKIE_NAME
 from backend.app.main import app
 from backend.app.api.v1.auth import _LOGIN_FAILURES
 
@@ -60,11 +61,16 @@ class TestAppPasswordSecurity(unittest.TestCase):
             json={"password": "correct horse battery staple"},
         )
         self.assertEqual(login.status_code, 200)
+        session_token = self.client.cookies.get(SESSION_COOKIE_NAME)
+        self.assertTrue(session_token)
         self.assertTrue(self.client.get("/api/v1/auth/me").json()["data"]["authenticated"])
         self.assertEqual(self.client.get("/api/v1/settings").status_code, 200)
 
         self.assertEqual(self.client.post("/api/v1/auth/logout").status_code, 200)
         self.assertEqual(self.client.get("/api/v1/settings").status_code, 401)
+        self.client.cookies.set(SESSION_COOKIE_NAME, session_token)
+        replay = self.client.get("/api/v1/settings")
+        self.assertEqual(replay.status_code, 401)
 
     def test_login_is_rate_limited_after_repeated_bad_passwords(self):
         for _ in range(5):

@@ -29,3 +29,9 @@ services:
         generateValue: true
       - key: SCHEDULER_TRIGGER_TOKEN
         generateValue: true
+      - key: LINKEDIN_CLIENT_ID
+        sync: false
+      - key: LINKEDIN_CLIENT_SECRET
+        sync: false
+      - key: LINKEDIN_TOKEN_ENCRYPTION_KEY
+        sync: false

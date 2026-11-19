@@ -15,12 +15,12 @@ Create a PostgreSQL database with a provider that offers a free tier, such as [N
 3. Enter the requested secret values in Render:
    - `DATABASE_URL`: the PostgreSQL connection URL from step 1.
    - `APP_ADMIN_PASSWORD`: a unique password with at least 16 characters.
-   - `APP_SESSION_SECRET`: a random secret with at least 32 characters.
-   - `SCHEDULER_TRIGGER_TOKEN`: a separate random secret.
+   - `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, and `LINKEDIN_TOKEN_ENCRYPTION_KEY` when enabling LinkedIn publishing.
+   - Render generates `APP_SESSION_SECRET` and `SCHEDULER_TRIGGER_TOKEN` for this Blueprint. If you set them manually, use separate random values with at least 32 characters.
 4. Review the plan before creating the service. The Blueprint disables the in-process scheduler because the free web service can sleep.
 5. After deployment, open the service URL and confirm the health endpoint reports `postgresql (connected)`.
 
-Generate random values locally; do not share them in chat or commit them:
+Generate the admin password locally. Render generates the session and scheduler secrets; if you set those manually, generate separate random values. Do not share secrets in chat or commit them:
 
 ```powershell
 python -c "import secrets; print(secrets.token_urlsafe(48))"
@@ -30,10 +30,9 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 In the repository's **Settings → Secrets and variables → Actions**, add:
 
-- `APP_URL`: the Render service's base URL, without a trailing slash.
-- `SCHEDULER_TRIGGER_TOKEN`: the same value configured in Render.
+- `SCHEDULER_TRIGGER_TOKEN`: copy the generated value from the Render service's environment settings.
 
-The workflow at `.github/workflows/daily-linkedin-scheduler.yml` calls the protected scheduler endpoint daily at **03:30 UTC (09:00 Asia/Kolkata)** and can also be started manually from the Actions tab. GitHub scheduled workflows can be delayed; if a due post is more than 15 minutes late, the app holds it for review instead of publishing it late.
+The workflow uses `https://linkedin-ai-publisher.onrender.com` by default, so `APP_URL` is not required for this deployment. If you use a different Render URL or custom domain, set `APP_URL` as a repository secret to override it. The workflow at `.github/workflows/daily-linkedin-scheduler.yml` calls the protected scheduler endpoint daily at **03:30 UTC (09:00 Asia/Kolkata)** and can also be started manually from the Actions tab. GitHub scheduled workflows can be delayed; if a due post is more than 15 minutes late, the app holds it for review instead of publishing it late.
 
 ### 4. Enable LinkedIn publishing
 
@@ -53,7 +52,7 @@ Keep the encryption key stable. Losing or changing it makes stored LinkedIn toke
 
 To turn typed or transcribed interview notes into a humanized post draft, configure `GEMINI_API_KEY` or `GROQ_API_KEY` on the service and select the matching provider in Settings. The source notes are sent to that provider. AI-generated content remains a draft and still requires your review and explicit approval. Post images are stored in PostgreSQL and uploaded through LinkedIn's Images API when the approved post is published.
 
-If publishing appears stuck, check the post status in Content Studio and confirm LinkedIn still shows **Connected**. Approval schedules the post for the next configured daily slot; in this deployment the GitHub Actions scheduler triggers at 03:30 UTC (09:00 Asia/Kolkata). Confirm the workflow has run successfully and that `APP_URL` and `SCHEDULER_TRIGGER_TOKEN` match the Render service. Posts over 15 minutes late are held for manual review. A failed publishing attempt is not automatically retried; verify the LinkedIn feed before taking further action.
+If publishing appears stuck, check the post status in Content Studio and confirm LinkedIn still shows **Connected**. Approval schedules the post for the next configured daily slot; in this deployment the GitHub Actions scheduler triggers at 03:30 UTC (09:00 Asia/Kolkata). Confirm the workflow has run successfully and that the GitHub `SCHEDULER_TRIGGER_TOKEN` matches the Render service; set `APP_URL` only when overriding the default service URL. Posts over 15 minutes late are held for manual review. A failed publishing attempt is not automatically retried; verify the LinkedIn feed before taking further action.
 
 ## Local Docker deployment
 
