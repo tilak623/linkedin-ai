@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import sqlite3
@@ -8,6 +9,8 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from PIL import Image
+import httpx
 
 from backend.app.core.config import settings
 from backend.app.core.db import DEFAULT_USER_ID, db
@@ -37,6 +40,7 @@ class TestContentWorkflow(unittest.TestCase):
             LINKEDIN_CLIENT_ID="test-client",
             LINKEDIN_CLIENT_SECRET="test-secret",
             LINKEDIN_TOKEN_ENCRYPTION_KEY="configured-test-key",
+            GEMINI_API_KEY="test-gemini-key",
             ENABLE_BACKGROUND_SCHEDULER=False,
             SCHEDULER_TRIGGER_TOKEN="test-scheduler-token",
         )
@@ -86,6 +90,66 @@ class TestContentWorkflow(unittest.TestCase):
         self.assertEqual(post["status"], "draft")
         self.assertIn("I learned how to test", post["final_content"])
         self.assertNotIn("sub-millisecond", post["final_content"])
+
+    def test_ai_humanize_creates_an_editable_review_required_draft(self):
+        generated = {
+            "title": "A small lesson from today",
+            "content": "I learned to verify my changes with focused tests.",
+        }
+        provider_response = httpx.Response(
+            200,
+            json={"candidates": [{"content": {"parts": [{"text": json.dumps(generated)}]}}]},
+        )
+        with patch("backend.app.api.v1.content.httpx.post", return_value=provider_response) as provider:
+            response = self.client.post(
+                "/api/v1/content/humanize",
+                json={"source_text": "I learned to test my changes today."},
+            )
+
+        self.assertEqual(response.status_code, 201)
+        post = response.json()["data"]
+        self.assertEqual(post["status"], "draft")
+        self.assertEqual(post["final_content"], generated["content"])
+        self.assertIn("I learned to test my changes today", provider.call_args.kwargs["json"]["contents"][0]["parts"][0]["text"])
+        self.assertEqual(
+            db.fetch_one("SELECT status FROM content_posts WHERE id = ?", (post["id"],))["status"],
+            "draft",
+        )
+
+    def test_media_upload_validates_images_and_attaches_to_post(self):
+        self.add_interview_evidence()
+        post = self.client.post("/api/v1/content/generate").json()["data"]
+        image_bytes = io.BytesIO()
+        Image.new("RGB", (4, 4), color="blue").save(image_bytes, format="PNG")
+
+        uploaded = self.client.post(
+            f"/api/v1/content/posts/{post['id']}/media",
+            files={"file": ("proof.png", image_bytes.getvalue(), "image/png")},
+        )
+        self.assertEqual(uploaded.status_code, 201)
+        media = uploaded.json()["data"]
+        preview = self.client.get(media["preview_url"])
+        self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview.headers["content-type"], "image/png")
+        self.assertEqual(preview.content, image_bytes.getvalue())
+
+        duplicate = self.client.post(
+            f"/api/v1/content/posts/{post['id']}/media",
+            files={"file": ("proof.png", image_bytes.getvalue(), "image/png")},
+        )
+        self.assertEqual(duplicate.status_code, 409)
+
+        with patch("backend.app.api.v1.content.publish_linkedin_post", return_value="urn:li:share:post-1") as publish:
+            now = datetime.now(timezone.utc)
+            db.execute(
+                "UPDATE content_posts SET status = 'scheduled', scheduled_for = ? WHERE id = ?",
+                ((now - timedelta(minutes=1)).isoformat(), post["id"]),
+            )
+            run_scheduler_tick(now)
+        publish.assert_called_once()
+        published_media = publish.call_args.args[1]
+        self.assertEqual(published_media[0]["filename"], "proof.png")
+        self.assertEqual(published_media[0]["content"], image_bytes.getvalue())
 
     def test_edit_and_approval_create_audited_scheduled_public_post(self):
         self.add_interview_evidence()

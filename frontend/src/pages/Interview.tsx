@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Mic, MicOff, Send, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
-import { InterviewMode, InterviewSession, InterviewTurnResult } from '../types';
+import { InterviewMode, InterviewSession, InterviewTurnResult, WorkspaceView } from '../types';
 
 interface SpeechRecognitionResultLike {
   0: { transcript: string };
@@ -35,7 +35,11 @@ const opportunityLabels: Record<InterviewTurnResult['content_opportunity'], stri
   none: 'No post suggested; this is fine',
 };
 
-export const Interview: React.FC = () => {
+interface InterviewProps {
+  onNavigate: (view: WorkspaceView) => void;
+}
+
+export const Interview: React.FC<InterviewProps> = ({ onNavigate }) => {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [mode, setMode] = useState<InterviewMode>('text');
   const [inputText, setInputText] = useState('');
@@ -44,6 +48,7 @@ export const Interview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState('');
+  const [humanizing, setHumanizing] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   useEffect(() => {
@@ -109,6 +114,31 @@ export const Interview: React.FC = () => {
     setContentOpportunity(null);
   };
 
+  const createHumanizedDraft = async (notes: string) => {
+    const sourceText = notes.trim();
+    if (!sourceText || humanizing) return;
+    if (sourceText.length > 8000) {
+      setError('This interview is longer than the AI drafting limit. Create a draft from a shorter answer.');
+      return;
+    }
+    setHumanizing(true);
+    setError('');
+    const result = await api.humanizeInterviewNotes(sourceText);
+    setHumanizing(false);
+    if (!result.success || !result.data) {
+      setError(result.error?.message ?? 'Could not create a humanized post draft.');
+      return;
+    }
+    onNavigate('content');
+  };
+
+  const interviewNotes = session?.completed
+    ? session.summary ?? ''
+    : [
+        ...(session?.messages.filter((message) => message.sender === 'user').map((message) => message.content) ?? []),
+        inputText.trim(),
+      ].filter(Boolean).join('\n\n');
+
   const toggleRecording = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -160,7 +190,7 @@ export const Interview: React.FC = () => {
       <div className="flex items-start gap-2 rounded-xl border border-brand-500/20 bg-brand-950/20 p-3.5 text-xs text-brand-200">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
         <p>
-          The guided interviewer saves each turn locally and chooses follow-ups from your answers. No external AI provider is called in this phase; use text if you don’t want your browser’s speech service to process audio.
+          Interview follow-ups are generated locally. When you create a post draft, only the notes you shared are sent to your configured Gemini or Groq provider for rewriting; review the result before approving it. Voice transcription uses your browser’s speech service.
         </p>
       </div>
 
@@ -209,6 +239,17 @@ export const Interview: React.FC = () => {
               <h3 className="text-sm font-semibold text-emerald-200">Reflection saved</h3>
               {contentOpportunity && <p className="mt-1 text-xs text-emerald-100/80">{opportunityLabels[contentOpportunity]}</p>}
               <p className="mt-2 whitespace-pre-wrap text-xs text-slate-300">{session.summary || 'No answer was recorded.'}</p>
+              {session.summary && (
+                <button
+                  type="button"
+                  onClick={() => void createHumanizedDraft(session.summary ?? '')}
+                  disabled={humanizing}
+                  className="mt-3 rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-500 disabled:opacity-50"
+                >
+                  {humanizing ? 'Analyzing your notes…' : 'Create a humanized LinkedIn draft'}
+                </button>
+              )}
+              {error && <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-300"><AlertCircle className="h-3.5 w-3.5" />{error}</p>}
             </div>
           )}
 
@@ -223,6 +264,14 @@ export const Interview: React.FC = () => {
                 <input value={inputText} onChange={(e) => setInputText(e.target.value)} maxLength={8000} disabled={busy} className="min-w-0 flex-1 rounded-xl border border-surface-800 bg-surface-950 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none" placeholder={isRecording ? 'Listening…' : 'Type your answer…'} />
                 <button type="submit" disabled={!inputText.trim() || busy} className="rounded-xl bg-brand-600 p-3 text-white hover:bg-brand-500 disabled:opacity-40"><Send className="h-4 w-4" /></button>
               </div>
+              <button
+                type="button"
+                onClick={() => void createHumanizedDraft(interviewNotes)}
+                disabled={!interviewNotes.trim() || humanizing}
+                className="mt-3 rounded-lg border border-brand-500/30 px-3 py-2 text-xs font-medium text-brand-200 hover:bg-brand-500/10 disabled:opacity-50"
+              >
+                {humanizing ? 'Analyzing your notes…' : 'Create a humanized LinkedIn draft'}
+              </button>
               {error && <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-rose-300"><AlertCircle className="h-3.5 w-3.5" />{error}</p>}
             </form>
           )}

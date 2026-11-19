@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle, ExternalLink, Link2, Loader2, Send, ShieldCheck, Sparkles, Unlink } from 'lucide-react';
+import { AlertCircle, CheckCircle, ExternalLink, ImagePlus, Link2, Loader2, Send, ShieldCheck, Sparkles, Trash2, Unlink } from 'lucide-react';
 import { api } from '../services/api';
-import { ContentPost, ContentSchedule, LinkedInStatus } from '../types';
+import { ContentMedia, ContentPost, ContentSchedule, LinkedInStatus } from '../types';
 
 const API_BASE_URL = '/api/v1';
 
@@ -18,6 +18,7 @@ export const ContentStudio: React.FC = () => {
   const [posts, setPosts] = useState<ContentPost[]>([]);
   const [linkedin, setLinkedIn] = useState<LinkedInStatus | null>(null);
   const [schedule, setSchedule] = useState<ContentSchedule | null>(null);
+  const [media, setMedia] = useState<ContentMedia[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -75,6 +76,24 @@ export const ContentStudio: React.FC = () => {
     }
   }, [selectedPost]);
 
+  useEffect(() => {
+    let active = true;
+    setMedia([]);
+    if (selectedPost?.id) {
+      void api.getPostMedia(selectedPost.id).then((response) => {
+        if (!active) return;
+        if (response.success && response.data) {
+          setMedia(response.data);
+        } else {
+          setError(response.error?.message ?? 'Could not load post media.');
+        }
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [selectedPost?.id]);
+
   const runAction = async (action: () => Promise<{ success: boolean; data: ContentPost | null; error?: { message: string } | undefined }>) => {
     setBusy(true);
     setError('');
@@ -112,6 +131,36 @@ export const ContentStudio: React.FC = () => {
   const saveDraft = () => {
     if (!selectedPost) return;
     void runAction(() => api.updateContentDraft(selectedPost.id, title, content));
+  };
+
+  const uploadMedia = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!selectedPost || !file) return;
+    setBusy(true);
+    setError('');
+    const response = await api.uploadPostMedia(selectedPost.id, file);
+    setBusy(false);
+    if (!response.success || !response.data) {
+      setError(response.error?.message ?? 'Could not upload the image.');
+      return;
+    }
+    setMedia([response.data]);
+    setNotice('Image attached to this draft. It will be uploaded to LinkedIn when the approved post is published.');
+  };
+
+  const removeMedia = async (assetId: string) => {
+    if (!selectedPost) return;
+    setBusy(true);
+    setError('');
+    const response = await api.deletePostMedia(selectedPost.id, assetId);
+    setBusy(false);
+    if (!response.success) {
+      setError(response.error?.message ?? 'Could not remove the image.');
+      return;
+    }
+    setMedia((current) => current.filter((item) => item.id !== assetId));
+    setNotice('Image removed from this draft.');
   };
 
   const approveAndSchedule = () => {
@@ -183,8 +232,7 @@ export const ContentStudio: React.FC = () => {
         <div className="flex items-start gap-2">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
           <p>
-            Drafts use only evidence saved in your interviews, projects, or learning milestones; no AI provider is called and achievements are not invented.
-            Review and edit every draft. Nothing is published until you explicitly approve it. Approved posts are scheduled for {schedule?.daily_post_time ?? '09:00'} {schedule?.timezone ?? 'Asia/Kolkata'};
+            Evidence-based drafts use saved work; interview answers can also be rewritten by your configured AI provider. Review and edit every draft. Nothing is published until you explicitly approve it. Approved posts are scheduled for {schedule?.daily_post_time ?? '09:00'} {schedule?.timezone ?? 'Asia/Kolkata'};
             the             server must be running at the scheduled time. Posts more than 15 minutes late are held for your review, not published as catch-up.
           </p>
         </div>
@@ -242,6 +290,34 @@ export const ContentStudio: React.FC = () => {
                 LinkedIn post text
                 <textarea value={content} onChange={(event) => setContent(event.target.value)} disabled={selectedPost.status !== 'draft'} maxLength={3000} rows={14} className="mt-1.5 w-full resize-y rounded-lg border border-surface-700 bg-surface-950 px-3 py-3 text-sm leading-relaxed text-slate-100 disabled:opacity-60" />
               </label>
+              <div className="rounded-lg border border-surface-800 bg-surface-950 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-200">Proof image</h4>
+                    <p className="mt-1 text-[11px] text-slate-500">Attach one JPEG, PNG, or GIF image (up to 10 MB) to publish with this post.</p>
+                  </div>
+                  {selectedPost.status === 'draft' && media.length === 0 && (
+                    <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-surface-700 px-3 py-2 text-xs text-slate-200 hover:bg-surface-800">
+                      <ImagePlus className="h-3.5 w-3.5" /> Upload image
+                      <input type="file" accept="image/jpeg,image/png,image/gif" disabled={busy} onChange={(event) => void uploadMedia(event)} className="sr-only" />
+                    </label>
+                  )}
+                </div>
+                {media.map((item) => (
+                  <div key={item.id} className="mt-3 flex items-start gap-3">
+                    <img src={item.preview_url} alt={`Proof image: ${item.filename}`} className="h-20 w-20 rounded-lg border border-surface-700 object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs text-slate-200">{item.filename}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">Attached to this post</p>
+                    </div>
+                    {selectedPost.status === 'draft' && (
+                      <button type="button" onClick={() => void removeMedia(item.id)} disabled={busy} aria-label={`Remove ${item.filename}`} className="rounded-lg p-2 text-slate-400 hover:bg-surface-800 hover:text-rose-300 disabled:opacity-50">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
               {selectedPost.status === 'publish_failed' && (
                 <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
                   Publishing did not return a confirmed result. Check your LinkedIn feed before creating or approving another copy to avoid duplicates.

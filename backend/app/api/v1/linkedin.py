@@ -2,7 +2,7 @@ import json
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from uuid import uuid4
 
 import httpx
@@ -228,11 +228,70 @@ def disconnect_linkedin():
     return ApiResponse(success=True, data={"connected": False})
 
 
-def publish_linkedin_post(post_text: str) -> str:
+def _upload_linkedin_image(access_token: str, owner: str, media: dict) -> str:
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "Linkedin-Version": settings.LINKEDIN_API_VERSION,
+        "X-Restli-Protocol-Version": "2.0.0",
+    }
+    try:
+        initialized = httpx.post(
+            "https://api.linkedin.com/rest/images?action=initializeUpload",
+            headers=headers,
+            json={"initializeUploadRequest": {"owner": owner}},
+            timeout=20.0,
+        )
+        if initialized.status_code not in (200, 201):
+            raise _linkedin_http_error(initialized)
+        upload_data = initialized.json()["value"]
+        upload_url = upload_data["uploadUrl"]
+        image_urn = upload_data["image"]
+        parsed_url = urlsplit(upload_url)
+        if (
+            parsed_url.scheme != "https"
+            or parsed_url.hostname not in ("www.linkedin.com", "linkedin.com")
+            or parsed_url.port not in (None, 443)
+            or parsed_url.username is not None
+            or parsed_url.password is not None
+        ):
+            logger.error("LinkedIn returned an unexpected image upload URL host")
+            raise HTTPException(status_code=502, detail="LinkedIn returned an invalid image upload URL")
+        uploaded = httpx.put(
+            upload_url,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": media["content_type"],
+            },
+            content=media["content"],
+            timeout=60.0,
+        )
+        if uploaded.status_code not in (200, 201):
+            raise _linkedin_http_error(uploaded)
+    except HTTPException:
+        raise
+    except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+        logger.warning("LinkedIn image upload failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="LinkedIn image upload failed") from exc
+    return image_urn
+
+
+def publish_linkedin_post(post_text: str, media: list[dict] | None = None) -> str:
     row = _connection()
     if not row or row["expires_at"] <= datetime.now(timezone.utc).isoformat():
         raise HTTPException(status_code=409, detail="LinkedIn is not connected or its access token expired")
     access_token = _connection_token(row)
+    content = None
+    if media:
+        if len(media) != 1:
+            raise HTTPException(status_code=422, detail="LinkedIn posts currently support one attached image")
+        image_urn = _upload_linkedin_image(access_token, row["person_urn"], media[0])
+        content = {
+            "media": {
+                "title": media[0]["filename"],
+                "id": image_urn,
+            }
+        }
     payload = {
         "author": row["person_urn"],
         "commentary": post_text,
@@ -245,6 +304,8 @@ def publish_linkedin_post(post_text: str) -> str:
         "lifecycleState": "PUBLISHED",
         "isReshareDisabledByAuthor": False,
     }
+    if content:
+        payload["content"] = content
     try:
         response = httpx.post(
             "https://api.linkedin.com/rest/posts",

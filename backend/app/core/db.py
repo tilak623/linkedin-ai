@@ -177,11 +177,16 @@ CREATE TABLE IF NOT EXISTS media_assets (
     post_id TEXT,
     asset_type TEXT NOT NULL,
     file_path TEXT NOT NULL,
+    file_data BYTEA,
     storage_url TEXT,
     metadata TEXT DEFAULT '{}',
     created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_media_assets_one_image_per_post
+    ON media_assets(user_id, post_id)
+    WHERE post_id IS NOT NULL AND asset_type = 'image';
 
 CREATE TABLE IF NOT EXISTS networking_suggestions (
     id TEXT PRIMARY KEY,
@@ -326,10 +331,19 @@ class Database:
                            WHERE table_schema = current_schema() AND table_name = 'linkedin_connections'"""
                     ).fetchall()
                 }
+                media_columns = {
+                    row["column_name"] for row in conn.execute(
+                        """SELECT column_name FROM information_schema.columns
+                           WHERE table_schema = current_schema() AND table_name = 'media_assets'"""
+                    ).fetchall()
+                }
             else:
                 user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
                 linkedin_columns = {
                     row["name"] for row in conn.execute("PRAGMA table_info(linkedin_connections)").fetchall()
+                }
+                media_columns = {
+                    row["name"] for row in conn.execute("PRAGMA table_info(media_assets)").fetchall()
                 }
             if "onboarding_completed" not in user_columns:
                 conn.execute(
@@ -337,6 +351,8 @@ class Database:
                 )
             if "member_name" not in linkedin_columns:
                 conn.execute("ALTER TABLE linkedin_connections ADD COLUMN member_name TEXT")
+            if "file_data" not in media_columns:
+                conn.execute("ALTER TABLE media_assets ADD COLUMN file_data BYTEA")
             
             # Check if default user exists
             cursor = conn.execute("SELECT id FROM users WHERE id = ?", (DEFAULT_USER_ID,))

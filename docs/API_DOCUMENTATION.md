@@ -35,12 +35,15 @@ The interview flow is local and rule-based; it does not call an AI model.
 - `GET /content/schedule` — configured daily time and time zone.
 - `GET /content/posts` — saved drafts and post states.
 - `POST /content/generate` — creates a factual template draft from the latest completed interview, a learning milestone, or an active project. Returns `409` if no evidence exists.
+- `POST /content/humanize` — sends provided interview notes to the selected Gemini or Groq provider and creates an editable draft. Requires that provider's API key and online mode.
 - `PATCH /content/posts/{id}` — edits title and text while the item is an unapproved draft.
+- `GET /content/posts/{id}/media`, `POST /content/posts/{id}/media` — list or attach one JPEG, PNG, or GIF image (maximum 10 MB) to a draft. `DELETE /content/posts/{id}/media/{asset_id}` removes it.
+- `GET /content/media/{asset_id}` — serves the authenticated image preview.
 - `POST /content/posts/{id}/approve` — body `{"confirm":true}` records user approval and schedules the exact text at the next daily posting time.
 - `POST /content/posts/{id}/reschedule` — body `{"confirm":true}` re-approves a post that was held because its schedule was missed.
 - `POST /content/scheduler/tick` — external scheduler hook; requires `Authorization: Bearer <SCHEDULER_TRIGGER_TOKEN>`.
 
-The local draft generator is deterministic, not AI-powered. Every public post requires explicit confirmation.
+Evidence-based draft generation is deterministic. Humanized drafts use the configured external AI provider and only become editable drafts; every public post still requires explicit confirmation. Attached images are stored in the database and uploaded to LinkedIn at publishing time.
 
 ## LinkedIn
 
@@ -53,4 +56,4 @@ The scheduler publishes only explicitly approved, due posts through `POST https:
 
 ## Planned, not implemented
 
-Technology research, AI generation/fact-checking, media generation, GitHub analysis, full content calendar, LinkedIn analytics, networking, Windows desktop integration, cloud sync, and multi-user auth are not currently exposed as implemented endpoints.
+Technology research and fact-checking, media generation, GitHub analysis, full content calendar, LinkedIn analytics, networking, Windows desktop integration, cloud sync, and multi-user auth are not currently exposed as implemented endpoints.

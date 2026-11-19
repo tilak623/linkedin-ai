@@ -231,6 +231,16 @@ class ContentPostUpdate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     final_content: str = Field(min_length=1, max_length=3000)
 
+class HumanizedDraftRequest(BaseModel):
+    source_text: str = Field(min_length=1, max_length=8000)
+
+class ContentMediaRead(BaseModel):
+    id: str
+    filename: str
+    content_type: str
+    preview_url: str
+    created_at: str
+
 class ContentApprovalRequest(BaseModel):
     confirm: bool
 

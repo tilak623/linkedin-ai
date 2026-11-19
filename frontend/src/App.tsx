@@ -104,7 +104,7 @@ export const App: React.FC = () => {
 
         <main className="flex-1 p-6 overflow-y-auto">
           {currentView === 'home' && <Home onNavigate={setCurrentView} health={health} authStatus={authStatus} />}
-          {currentView === 'interview' && <Interview />}
+          {currentView === 'interview' && <Interview onNavigate={setCurrentView} />}
           {currentView === 'content' && <ContentStudio />}
           {currentView === 'media' && <MediaStudio />}
           {currentView === 'calendar' && <Calendar />}

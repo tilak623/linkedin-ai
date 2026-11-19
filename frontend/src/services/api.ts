@@ -1,6 +1,7 @@
 import {
   ApiResponse,
   ContentPost,
+  ContentMedia,
   ContentSchedule,
   HealthResponse,
   InterviewMode,
@@ -22,12 +23,13 @@ const API_BASE_URL = '/api/v1';
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
+      const headers = new Headers(options.headers);
+      if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
       });
 
       if (!response.ok) {
@@ -215,6 +217,33 @@ class ApiService {
 
   async generateContentDraft(): Promise<ApiResponse<ContentPost>> {
     return this.request<ContentPost>('/content/generate', { method: 'POST' });
+  }
+
+  async humanizeInterviewNotes(source_text: string): Promise<ApiResponse<ContentPost>> {
+    return this.request<ContentPost>('/content/humanize', {
+      method: 'POST',
+      body: JSON.stringify({ source_text }),
+    });
+  }
+
+  async getPostMedia(id: string): Promise<ApiResponse<ContentMedia[]>> {
+    return this.request<ContentMedia[]>(`/content/posts/${encodeURIComponent(id)}/media`);
+  }
+
+  async uploadPostMedia(id: string, file: File): Promise<ApiResponse<ContentMedia>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.request<ContentMedia>(`/content/posts/${encodeURIComponent(id)}/media`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async deletePostMedia(postId: string, mediaId: string): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request<{ deleted: boolean }>(
+      `/content/posts/${encodeURIComponent(postId)}/media/${encodeURIComponent(mediaId)}`,
+      { method: 'DELETE' },
+    );
   }
 
   async updateContentDraft(id: string, title: string, final_content: string): Promise<ApiResponse<ContentPost>> {

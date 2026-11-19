@@ -96,6 +96,33 @@ class TestLinkedInOAuthAndPublishing(unittest.TestCase):
         self.assertEqual(request.kwargs["json"]["author"], "urn:li:person:member-123")
         self.assertEqual(request.kwargs["json"]["commentary"], "Approved post text")
 
+        image_init = httpx.Response(
+            200,
+            json={
+                "value": {
+                    "uploadUrl": "https://www.linkedin.com/dms-uploads/test-image",
+                    "image": "urn:li:image:test-image",
+                }
+            },
+        )
+        image_post = httpx.Response(201, headers={"x-restli-id": "urn:li:share:image-post"})
+        with patch(
+            "backend.app.api.v1.linkedin.httpx.post",
+            side_effect=[image_init, image_post],
+        ) as image_requests, patch(
+            "backend.app.api.v1.linkedin.httpx.put",
+            return_value=httpx.Response(201),
+        ) as upload:
+            image_post_id = publish_linkedin_post(
+                "Post with proof",
+                [{"content": b"image bytes", "filename": "proof.png", "content_type": "image/png"}],
+            )
+        self.assertEqual(image_post_id, "urn:li:share:image-post")
+        self.assertEqual(image_requests.call_args_list[0].args[0], "https://api.linkedin.com/rest/images?action=initializeUpload")
+        self.assertEqual(upload.call_args.args[0], "https://www.linkedin.com/dms-uploads/test-image")
+        self.assertEqual(upload.call_args.kwargs["content"], b"image bytes")
+        self.assertEqual(image_requests.call_args_list[1].kwargs["json"]["content"]["media"]["id"], "urn:li:image:test-image")
+
         replay = self.client.get(
             "/api/v1/linkedin/callback",
             params={"code": "replayed-code", "state": state},

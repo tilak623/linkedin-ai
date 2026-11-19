@@ -2,16 +2,16 @@
 
 An intelligent, authentic, and zero-cost AI-powered personal branding assistant that transforms your daily engineering activities, technical learning, code repositories, and career milestones into a credible and consistent professional presence on LinkedIn.
 
-> **Development status:** The app includes onboarding and memory, a persisted guided interview, evidence-based post drafts, app-password protection, LinkedIn OAuth, and approval-gated publishing. Draft creation is deterministic and does not call an AI model. A best-effort free-tier deployment path uses Render, PostgreSQL, and a GitHub Actions scheduler; it does not guarantee exact-time jobs. Research, media, GitHub analysis, analytics, networking, desktop support, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own provider accounts and LinkedIn Developer app; no service credentials or secrets are included.
+> **Development status:** The app includes onboarding and memory, a persisted guided interview, evidence-based drafts, optional AI-humanized interview drafts, image attachments for posts, app-password protection, LinkedIn OAuth, and approval-gated publishing. AI drafting requires a configured Gemini or Groq API key. A best-effort free-tier deployment path uses Render, PostgreSQL, and a GitHub Actions scheduler; it does not guarantee exact-time jobs. Research, media generation, GitHub analysis, analytics, networking, desktop support, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own provider accounts and LinkedIn Developer app; no service credentials or secrets are included.
 
 ---
 
 ## 🌟 Product Vision
 
-1. **AI Daily Interviewer (Voice & Text)**: A local guided, persisted interview flow is available; language-model reasoning and speech synthesis are planned.
+1. **AI Daily Interviewer (Voice & Text)**: A local guided, persisted interview flow supports typed and browser-transcribed answers; configured AI providers can turn those notes into editable, humanized LinkedIn drafts.
 2. **Professional Memory & Knowledge Library**: Local profile, skills, projects, and learning milestones are implemented; adaptive memory features remain planned.
 3. **Technology Research Engine**: Multi-source daily tech intelligence (Hacker News, Reddit, ArXiv, GitHub Trending, tech publications) with automated credibility ranking and claim verification.
-4. **Evidence-based Content Studio**: Local post drafts from saved interview, project, or learning evidence; edit and approve before scheduling. No AI or fact-checking provider is connected.
+4. **Evidence-based Content Studio**: Local drafts from saved evidence plus optional AI-humanized drafts from interview notes; edit, attach one proof image, and approve before scheduling.
 5. **AI Media Generation Studio**: Programmatic, high-resolution infographic, architecture diagram, code snippet, and carousel generation (100% free, zero paid subscriptions).
 6. **LinkedIn Publishing Manager**: Official OAuth and Posts API integration, encrypted token storage, explicit per-post approval, and scheduled publishing when configured.
 7. **Smart Content Calendar & Analytics**: Best-time scheduling recommendations, draft status tracking, and genuine engagement metrics without fabricated data.

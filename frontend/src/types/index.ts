@@ -169,6 +169,14 @@ export interface ContentPost {
   approved_at: string | null;
 }
 
+export interface ContentMedia {
+  id: string;
+  filename: string;
+  content_type: string;
+  preview_url: string;
+  created_at: string;
+}
+
 export interface LinkedInStatus {
   configured: boolean;
   connected: boolean;

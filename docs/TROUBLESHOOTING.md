@@ -13,8 +13,8 @@
 - **Symptom**: Cloud AI requests fail with HTTP 429.
 - **Cause**: Exceeded Gemini or Groq free tier requests per minute (RPM).
 - **Solution**:
-  - The AI Provider Manager automatically falls back to secondary free providers (e.g., Gemini -> Groq -> Local SLM).
-  - You can also enable `Offline / Local Model` mode in Settings.
+  - Humanized post drafts use the provider selected in Settings and do not silently switch providers. Wait and retry, or select a different provider that has an API key configured.
+  - Offline mode disables external AI drafting; turn it off before generating a humanized post.
 
 ### 1.3 Web Speech API Not Hearing Microphone
 - **Symptom**: Voice interview button does not pick up voice or fails immediately.
@@ -37,3 +37,12 @@
 - **Solution**:
   - Check Windows notification center and turn off "Do Not Disturb".
   - Ensure notifications are enabled for Electron in Windows Settings > System > Notifications.
+
+### 1.6 LinkedIn Post Not Publishing
+- **Symptom**: An approved post remains scheduled or changes to **Missed schedule** or **Publishing failed**.
+- **Cause**: Approval schedules for the next daily posting slot; publishing requires an active LinkedIn connection and a successful scheduler run.
+- **Solution**:
+  - In Content Studio, check the LinkedIn connection, post status, and displayed schedule time.
+  - For Render, confirm the GitHub Actions scheduler workflow ran and its `APP_URL` and `SCHEDULER_TRIGGER_TOKEN` secrets match the service configuration.
+  - Reconnect LinkedIn if its token expired. Posts held for a missed schedule need a new explicit approval.
+  - For **Publishing failed**, check the LinkedIn feed before retrying; the app prevents automatic retries to avoid duplicate posts.

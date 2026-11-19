@@ -51,6 +51,10 @@ After adding or changing OAuth settings, reconnect LinkedIn from the deployed Co
 
 Keep the encryption key stable. Losing or changing it makes stored LinkedIn tokens unusable. Token refresh is not implemented; reconnect after token expiry.
 
+To turn typed or transcribed interview notes into a humanized post draft, configure `GEMINI_API_KEY` or `GROQ_API_KEY` on the service and select the matching provider in Settings. The source notes are sent to that provider. AI-generated content remains a draft and still requires your review and explicit approval. Post images are stored in PostgreSQL and uploaded through LinkedIn's Images API when the approved post is published.
+
+If publishing appears stuck, check the post status in Content Studio and confirm LinkedIn still shows **Connected**. Approval schedules the post for the next configured daily slot; in this deployment the GitHub Actions scheduler triggers at 03:30 UTC (09:00 Asia/Kolkata). Confirm the workflow has run successfully and that `APP_URL` and `SCHEDULER_TRIGGER_TOKEN` match the Render service. Posts over 15 minutes late are held for manual review. A failed publishing attempt is not automatically retried; verify the LinkedIn feed before taking further action.
+
 ## Local Docker deployment
 
 1. Install Docker Desktop and create a private `.env` from `.env.example`.
