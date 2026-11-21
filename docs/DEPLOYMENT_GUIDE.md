@@ -36,21 +36,23 @@ The workflow uses `https://linkedin-ai-publisher.onrender.com` by default, so `A
 
 ### 4. Enable LinkedIn publishing
 
-Create a LinkedIn Developer app and obtain the approved `openid`, `profile`, and `w_member_social` access. In Render, set `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, and `LINKEDIN_TOKEN_ENCRYPTION_KEY`. Generate the encryption key locally:
+1. Sign in to the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps) with the account you want to connect and create an app. LinkedIn may require a company page and verification.
+2. On the app's **Products** tab, request/enable **Sign In with LinkedIn using OpenID Connect** and **Share on LinkedIn**. Wait for LinkedIn to grant the required `openid`, `profile`, and `w_member_social` access; approval is controlled by LinkedIn and is not guaranteed.
+3. On **Auth**, copy the **Client ID** and **Client Secret** and add this exact redirect URL under authorized redirect URLs:
+
+   `https://linkedin-ai-publisher.onrender.com/api/v1/linkedin/callback`
+
+4. In Render, open the service's **Environment** settings and set `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` to those values. Generate an encryption key locally and set it as `LINKEDIN_TOKEN_ENCRYPTION_KEY`:
 
 ```powershell
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-In the LinkedIn app, configure this exact HTTPS callback:
-
-`https://linkedin-ai-publisher.onrender.com/api/v1/linkedin/callback`
-
-After adding or changing OAuth settings, reconnect LinkedIn from the deployed Content Studio and verify the authorized profile. The app still requires explicit approval of each exact post before scheduling. LinkedIn access may require product review; hosting does not grant API access.
+5. Save the environment changes and wait for Render to redeploy. Open the deployed site, sign in, go to **Content Studio → Connect LinkedIn**, and approve the LinkedIn consent screen. Confirm the displayed authorized member is the correct account. The app still requires explicit approval of each exact post before scheduling. Hosting does not grant LinkedIn API access.
 
 Keep the encryption key stable. Losing or changing it makes stored LinkedIn tokens unusable. Token refresh is not implemented; reconnect after token expiry.
 
-To turn typed or transcribed interview notes into a humanized post draft, configure `GEMINI_API_KEY` or `GROQ_API_KEY` on the service and select the matching provider in Settings. The source notes are sent to that provider. AI-generated content remains a draft and still requires your review and explicit approval. Post images are stored in PostgreSQL and uploaded through LinkedIn's Images API when the approved post is published.
+To turn typed or transcribed interview notes into a humanized post draft, create a key in [Google AI Studio](https://aistudio.google.com/apikey) or [Groq Console](https://console.groq.com/keys). In Render's **Environment** settings, add `GEMINI_API_KEY` or `GROQ_API_KEY`, save, and wait for a restart/redeploy. Select the corresponding provider under **Settings → Zero-Cost AI Engine Provider**. The app reports whether a provider key is configured without exposing it. The source notes are sent to that provider; check its current free-tier quotas and data terms. AI-generated content remains a draft and still requires your review and explicit approval. Post images are stored in PostgreSQL and uploaded through LinkedIn's Images API when the approved post is published.
 
 If publishing appears stuck, check the post status in Content Studio and confirm LinkedIn still shows **Connected**. Approval schedules the post for the next configured daily slot; in this deployment the GitHub Actions scheduler triggers at 03:30 UTC (09:00 Asia/Kolkata). Confirm the workflow has run successfully and that the GitHub `SCHEDULER_TRIGGER_TOKEN` matches the Render service; set `APP_URL` only when overriding the default service URL. Posts over 15 minutes late are held for manual review. A failed publishing attempt is not automatically retried; verify the LinkedIn feed before taking further action.
 

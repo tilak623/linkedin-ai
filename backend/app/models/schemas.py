@@ -50,6 +50,11 @@ class UserSettingsUpdate(BaseModel):
     offline_mode: Optional[bool] = None
     github_username: Optional[str] = None
 
+class AIProviderStatus(BaseModel):
+    preferred_provider: Literal["gemini", "groq", "local"]
+    gemini_configured: bool
+    groq_configured: bool
+
 class UserProfileRead(BaseModel):
     id: str
     user_id: str

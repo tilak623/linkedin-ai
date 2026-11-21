@@ -1,5 +1,6 @@
 import {
   ApiResponse,
+  AIProviderStatus,
   ContentPost,
   ContentMedia,
   ContentSchedule,
@@ -99,6 +100,10 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify(update),
     });
+  }
+
+  async getAIProviderStatus(): Promise<ApiResponse<AIProviderStatus>> {
+    return this.request<AIProviderStatus>('/settings/ai-providers');
   }
 
   async getProfile(): Promise<ApiResponse<UserProfile>> {

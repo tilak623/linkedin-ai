@@ -1,10 +1,28 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from backend.app.core.db import db, DEFAULT_USER_ID
-from backend.app.models.schemas import ApiResponse, UserSettingsRead, UserSettingsUpdate
+from backend.app.models.schemas import AIProviderStatus, ApiResponse, UserSettingsRead, UserSettingsUpdate
 from backend.app.core.logging_config import logger
+from backend.app.core.config import settings as app_settings
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
+
+@router.get("/ai-providers", response_model=ApiResponse[AIProviderStatus])
+def get_ai_provider_status():
+    row = db.fetch_one(
+        "SELECT preferred_ai_provider FROM user_settings WHERE user_id = ?",
+        (DEFAULT_USER_ID,),
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    return ApiResponse(
+        success=True,
+        data=AIProviderStatus(
+            preferred_provider=row["preferred_ai_provider"],
+            gemini_configured=bool(app_settings.GEMINI_API_KEY.strip()),
+            groq_configured=bool(app_settings.GROQ_API_KEY.strip()),
+        ),
+    )
 
 @router.get("", response_model=ApiResponse[UserSettingsRead])
 def get_settings():

@@ -43,6 +43,12 @@ export interface UserSettings {
   updated_at: string;
 }
 
+export interface AIProviderStatus {
+  preferred_provider: UserSettings['preferred_ai_provider'];
+  gemini_configured: boolean;
+  groq_configured: boolean;
+}
+
 export interface UserProfile {
   id: string;
   user_id: string;

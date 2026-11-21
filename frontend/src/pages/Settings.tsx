@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ShieldCheck,
   Bell,
@@ -33,9 +33,31 @@ export const Settings: React.FC<SettingsProps> = ({
   const [aiProvider, setAiProvider] = useState(settings?.preferred_ai_provider ?? 'gemini');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [aiProviderStatus, setAIProviderStatus] = useState<{
+    gemini_configured: boolean;
+    groq_configured: boolean;
+  } | null>(null);
+  const [aiProviderError, setAIProviderError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    void api.getAIProviderStatus().then((response) => {
+      if (!active) return;
+      if (response.success && response.data) {
+        setAIProviderStatus(response.data);
+      } else {
+        setAIProviderError(response.error?.message ?? 'Could not load AI provider status.');
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError('');
     const res = await api.updateSettings({
       reminders_enabled: remindersEnabled,
       reminder_interval_mins: intervalMins,
@@ -46,6 +68,8 @@ export const Settings: React.FC<SettingsProps> = ({
       onSettingsUpdated(res.data);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
+    } else {
+      setSaveError(res.error?.message ?? 'Could not save settings.');
     }
   };
 
@@ -67,7 +91,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <ShieldCheck className="w-5 h-5 text-brand-400" />
           <div>
             <h3 className="text-sm font-semibold text-slate-100">Settings & Privacy Centre</h3>
-            <p className="text-xs text-slate-400">Manage saved preferences. Desktop reminders and AI providers are not connected in this phase.</p>
+            <p className="text-xs text-slate-400">Manage saved preferences and check configured AI providers.</p>
           </div>
         </div>
       </div>
@@ -116,8 +140,10 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed">
-          Choose a preferred provider for future use. No AI provider is currently connected or called by the application.
+          Gemini and Groq can humanize interview notes into editable drafts using their free tiers (subject to each provider's quotas and terms). Keys stay on the backend; the app never returns them to this page.
         </p>
+
+        {aiProviderError && <p role="alert" className="text-xs text-red-300">{aiProviderError}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <button
@@ -129,8 +155,12 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Google Gemini 2.5</div>
-            <div className="text-[11px] text-slate-400">Not connected</div>
-            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
+            <div className="text-[11px] text-slate-400">
+              {aiProviderStatus?.gemini_configured ? 'API key configured' : 'API key not configured'}
+            </div>
+            <div className={`text-[10px] mt-2 font-mono ${aiProviderStatus?.gemini_configured ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {aiProviderStatus?.gemini_configured ? 'Ready for AI drafts' : 'Set GEMINI_API_KEY on backend'}
+            </div>
           </button>
 
           <button
@@ -142,12 +172,17 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Groq (Llama 3.3)</div>
-            <div className="text-[11px] text-slate-400">Not connected</div>
-            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
+            <div className="text-[11px] text-slate-400">
+              {aiProviderStatus?.groq_configured ? 'API key configured' : 'API key not configured'}
+            </div>
+            <div className={`text-[10px] mt-2 font-mono ${aiProviderStatus?.groq_configured ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {aiProviderStatus?.groq_configured ? 'Ready for AI drafts' : 'Set GROQ_API_KEY on backend'}
+            </div>
           </button>
 
           <button
             onClick={() => setAiProvider('local')}
+            disabled
             className={`p-3.5 rounded-xl border text-left transition-all ${
               aiProvider === 'local'
                 ? 'bg-brand-600/15 border-brand-500/40 text-brand-300'
@@ -155,10 +190,13 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <div className="font-semibold text-xs text-slate-100 mb-1">Local SLM (CPU)</div>
-            <div className="text-[11px] text-slate-400">Not installed</div>
-            <div className="text-[10px] text-amber-300 mt-2 font-mono">Planned provider</div>
+            <div className="text-[11px] text-slate-400">Not implemented</div>
+            <div className="text-[10px] text-amber-300 mt-2 font-mono">Unavailable</div>
           </button>
         </div>
+        <p className="text-xs text-slate-400">
+          For local PowerShell, set the key in the backend terminal before starting it; Docker users can place it in the private root <code className="text-slate-200">.env</code>. For a hosted site, add it in the hosting service's environment settings. Never put keys in frontend files or commit them.
+        </p>
       </div>
 
       {/* Privacy Centre & Data Sovereignty */}
@@ -181,6 +219,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* Save Button */}
       <div className="flex items-center justify-end gap-3 pt-4">
+        {saveError && <span role="alert" className="text-xs text-red-300">{saveError}</span>}
         {saveSuccess && (
           <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
             <CheckCircle className="w-4 h-4" />
