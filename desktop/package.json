@@ -1,0 +1,36 @@
+{
+  "name": "personal-branding-agent-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows system-tray companion for daily interview reminders",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.cjs",
+    "test": "node --test reminder-policy.test.cjs",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.tilak623.personalbrandingagent",
+    "productName": "Personal Branding Agent",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "reminder-policy.cjs",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

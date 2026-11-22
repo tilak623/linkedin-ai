@@ -114,9 +114,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, health, authStatus }) =>
                 <Shield className="w-4 h-4" />
               </span>
             </div>
-            <div className="text-2xl font-bold text-white mb-1">Not connected</div>
+            <div className="text-2xl font-bold text-white mb-1">
+              {health?.ai_provider === 'local_fallback'
+                ? 'AI key not configured'
+                : `${health?.ai_provider ?? 'Checking'} provider`}
+            </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Phase 2 uses local SQLite. AI providers and cloud services are not connected yet.
+              Interview notes can be turned into editable AI drafts when a provider key is configured. Cloud sync is not enabled.
             </p>
           </div>
           <button

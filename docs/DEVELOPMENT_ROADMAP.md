@@ -110,8 +110,7 @@ Phase 13: Reliability, Testing & Final Release
 ### Phase 11: Windows Desktop Companion
 - **Objective**: Native Windows Electron integration.
 - **Deliverables**:
-  - System tray icon and background process.
-  - 15-minute gentle interview reminder notifications until completed.
+  - **Implemented subset:** System tray app, optional startup at Windows sign-in, and configurable authenticated interview reminders until the daily interview is completed.
   - Local folder selection dialog with read-only security filter.
   - Offline task queue and local SQLite caching.
 

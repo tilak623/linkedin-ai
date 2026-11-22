@@ -2,7 +2,7 @@
 
 An intelligent, authentic, and zero-cost AI-powered personal branding assistant that transforms your daily engineering activities, technical learning, code repositories, and career milestones into a credible and consistent professional presence on LinkedIn.
 
-> **Development status:** The app includes onboarding and memory, a persisted guided interview, evidence-based drafts, optional AI-humanized interview drafts, image attachments for posts, app-password protection, LinkedIn OAuth, and approval-gated publishing. AI drafting requires a configured Gemini or Groq API key. A best-effort free-tier deployment path uses Render, PostgreSQL, and a GitHub Actions scheduler; it does not guarantee exact-time jobs. Research, media generation, GitHub analysis, analytics, networking, desktop support, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own provider accounts and LinkedIn Developer app; no service credentials or secrets are included.
+> **Development status:** The app includes onboarding and memory, a persisted guided interview, evidence-based drafts, optional AI-humanized interview drafts, image attachments for posts, app-password protection, LinkedIn OAuth, and approval-gated publishing. AI drafting requires a configured Gemini or Groq API key. The Windows tray companion in `desktop/` supports authenticated interview reminders while it is running. A best-effort free-tier deployment path uses Render, PostgreSQL, and a GitHub Actions scheduler; it does not guarantee exact-time jobs. Research, media generation, GitHub analysis, analytics, networking, local SLM inference, and cloud sync are not implemented. Public deployment and LinkedIn posting require your own provider accounts and LinkedIn Developer app; no service credentials or secrets are included.
 
 ---
 
@@ -17,7 +17,7 @@ An intelligent, authentic, and zero-cost AI-powered personal branding assistant 
 7. **Smart Content Calendar & Analytics**: Best-time scheduling recommendations, draft status tracking, and genuine engagement metrics without fabricated data.
 8. **GitHub & Portfolio Intelligence**: Repository analyzer that extracts real engineering contributions without exaggeration.
 9. **Professional Networking Assistant**: Intelligent suggestion engine for relevant peer connections and thoughtful discussion contributions with explicit approval gates.
-10. **Windows Desktop Companion**: Electron tray app with automated startup, 15-minute gentle interview reminders, local folder scanning, and offline SQLite caching.
+10. **Windows Desktop Companion**: Electron tray app with optional startup and configurable interview reminders while it is running.
 11. **Privacy & Security Centre**: Complete data ownership, local-first credential storage, zero secret leaks, and granular folder permissions.
 12. **Cost-conscious Architecture**: Local SQLite and deterministic draft generation work without paid API keys; public hosting and LinkedIn developer access depend on external providers and their current policies.
 
@@ -41,6 +41,9 @@ An intelligent, authentic, and zero-cost AI-powered personal branding assistant 
 │   │   ├── services/         # Backend API client
 │   │   └── types/            # TypeScript interfaces
 │   └── package.json          # Frontend dependencies
+├── desktop/                  # Windows system-tray reminder companion
+│   ├── main.cjs              # Electron tray app and reminder polling
+│   └── package.json          # Desktop app and Windows installer scripts
 └── docs/                     # Full system specifications & guides
 ```
 
@@ -49,6 +52,7 @@ An intelligent, authentic, and zero-cost AI-powered personal branding assistant 
 ## 🚀 Quick Start
 
 See [SETUP_GUIDE.md](docs/SETUP_GUIDE.md) for full installation and launch instructions.
+See [desktop/README.md](desktop/README.md) to run or package the Windows reminder companion.
 
 ### Local development
 
@@ -65,7 +69,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The development server proxies API calls to the local backend. The Electron desktop companion is not included.
+Open `http://localhost:5173`. The development server proxies API calls to the local backend. The Windows tray companion is documented in [desktop/README.md](desktop/README.md).
 
 ### Private Docker deployment
 

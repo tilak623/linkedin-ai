@@ -115,7 +115,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <p className="text-xs text-slate-300 leading-relaxed">
-          Reminder preferences can be saved, but notifications are not active because the Windows Desktop Companion has not been implemented yet.
+          Install and run the Windows Desktop Companion for system notifications. It checks these saved preferences and stops reminding after today's interview is complete.
         </p>
 
         <div className="flex items-center gap-3 pt-2">
@@ -203,7 +203,7 @@ export const Settings: React.FC<SettingsProps> = ({
       <div className="p-6 rounded-xl bg-surface-900 border border-surface-800 space-y-4">
         <h4 className="text-sm font-bold text-slate-100">Privacy Centre & Data Ownership</h4>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Phase 2 profile and professional-memory records are stored in local SQLite. Cloud storage, encryption at rest, and full privacy controls are not implemented yet.
+          Records are stored in the database configured for this deployment. Cross-device cloud synchronization and complete privacy controls are not implemented yet.
         </p>
 
         <div className="flex flex-wrap gap-3 pt-2">

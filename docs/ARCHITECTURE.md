@@ -58,11 +58,11 @@ flowchart TD
 
 ### 2.1 Client Layer
 - **Electron Windows Desktop Companion**:
-  - Resides in the Windows system tray (`tray.js`).
-  - Executes background interview reminders every 15 minutes until daily interview completion.
-  - Manages Windows registry run-at-startup preferences.
-  - Implements safe, read-only local folder inspection using explicit native folder dialogs.
-  - Embeds the React application seamlessly.
+  - Resides in the Windows system tray (`desktop/main.cjs`).
+  - Reads the authenticated website's reminder settings and today's interview status.
+  - Sends reminders at the configured interval until today's interview is complete.
+  - Supports optional startup at Windows sign-in and hides to the tray when its window is closed.
+  - Does not yet implement local folder inspection, offline task queues, or local SQLite caching.
 - **React 18 + TypeScript Web Workspace**:
   - Modern, responsive SPA bundled with Vite.
   - 12 Dedicated Workspaces: Home, AI Interviewer, Content Studio, Media Studio, Content Calendar, Research Engine, Professional Memory, Portfolio Manager, Networking Assistant, Analytics, Profile Manager, Settings & Privacy.

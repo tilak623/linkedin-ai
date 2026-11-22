@@ -64,6 +64,10 @@ The interview flow can send your notes to Gemini or Groq to create an editable d
 4. In the website, open **Settings → Zero-Cost AI Engine Provider**, select the provider whose key you added, and save settings. The card reports whether the backend sees a key; it never displays the key itself.
 5. In **Interview**, use **Create a humanized LinkedIn draft**. The result remains a draft for you to edit and approve. The Local SLM option is not implemented yet.
 
+## Windows interview reminders
+
+The companion app in [`desktop/README.md`](../desktop/README.md) sends Windows system notifications while it is running. It signs in through its website window and reads the saved reminder interval and today's interview status; it does not store API keys or the app password. Install and start the companion on the Windows PC, sign in inside it, and enable reminders in website Settings. Notifications stop after today's interview is completed. The companion cannot notify while the PC is off or asleep.
+
 ## Local verification
 
 ```powershell
