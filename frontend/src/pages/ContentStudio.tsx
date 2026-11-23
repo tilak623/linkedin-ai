@@ -199,7 +199,7 @@ export const ContentStudio: React.FC = () => {
             <h2 className="font-semibold">LinkedIn publishing connection</h2>
           </div>
           <p className="mt-1 text-xs text-slate-400">
-            Uses LinkedIn OAuth and its official Posts API. Expected profile: <a className="text-brand-300 underline" href={linkedin?.expected_profile_url ?? 'https://linkedin.com/tilakc623'} target="_blank" rel="noreferrer">your provided LinkedIn URL</a>. Confirm the authorized member below is the right account.
+            Uses LinkedIn OAuth and its official Posts API. Expected profile: <a className="text-brand-300 underline" href={linkedin?.expected_profile_url ?? 'https://www.linkedin.com/in/tilakc623/'} target="_blank" rel="noreferrer">your provided LinkedIn URL</a>. Confirm the authorized member below is the right account.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

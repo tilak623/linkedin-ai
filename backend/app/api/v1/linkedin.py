@@ -91,7 +91,7 @@ def get_linkedin_status():
             connected=connected,
             member_name=row["member_name"] if connected else None,
             expires_at=expires_at,
-            expected_profile_url="https://linkedin.com/tilakc623",
+            expected_profile_url="https://www.linkedin.com/in/tilakc623/",
         ),
     )
 
